@@ -1,5 +1,5 @@
 {
-  description = "oneohm — NixOS home server";
+  description = "NixOS home servers";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
@@ -20,18 +20,37 @@
     };
   };
 
-  outputs = { self, nixpkgs, ... }@inputs: {
-    nixosConfigurations.oneohm = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
+  outputs = { self, nixpkgs, ... }@inputs:
+  let
+    mkHost = { system, hostname, timezone ? "America/Edmonton" }:
+      nixpkgs.lib.nixosSystem {
+        inherit system;
+        specialArgs = { inherit inputs self hostname timezone; };
+        modules = [
+          inputs.disko.nixosModules.disko
+          inputs.sops-nix.nixosModules.sops
+          inputs.home-manager.nixosModules.home-manager
+          ./modules/nixos/common.nix
+          ./modules/nixos/openssh.nix
+          ./modules/nixos/users.nix
+          ./hosts/${hostname}
+        ];
+      };
+  in {
+    nixosConfigurations = {
+      oneohm = mkHost {
+        system = "x86_64-linux";
+        hostname = "oneohm";
+        timezone = "America/Edmonton";
+      };
 
-      specialArgs = { inherit inputs self; };
-
-      modules = [
-        inputs.disko.nixosModules.disko
-        inputs.sops-nix.nixosModules.sops
-        inputs.home-manager.nixosModules.home-manager
-        ./hosts/oneohm
-      ];
+      # auir = mkHost {
+      #   system = "aarch64-linux";
+      #   hostname = "auir";
+      #   timezone = "TODO";
+      # };
+      # artimoose = mkHost { system = "x86_64-linux"; hostname = "artimoose"; };
+      # gypsystudio = mkHost { system = "x86_64-linux"; hostname = "gypsystudio"; };
     };
   };
 }
