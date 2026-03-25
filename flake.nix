@@ -32,7 +32,6 @@
           inputs.home-manager.nixosModules.home-manager
           ./modules/nixos/common.nix
           ./modules/nixos/openssh.nix
-          ./modules/nixos/users.nix
           ./hosts/${hostname}
         ];
       };

@@ -24,5 +24,5 @@
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
   home-manager.extraSpecialArgs = { inherit self; };
-  home-manager.users.smithoo4 = import ../home-manager/smithoo4.nix;
+  home-manager.users.smithoo4 = import ./home-manager.nix;
 }
