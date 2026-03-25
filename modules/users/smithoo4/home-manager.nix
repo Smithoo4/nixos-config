@@ -1,4 +1,4 @@
-{ pkgs, self, ... }:
+{ pkgs, ... }:
 {
   home.packages = with pkgs; [
     htop
@@ -32,7 +32,7 @@
   };
 
   home.file.".ssh/smithoo4_github_ed25519.pub" = {
-    source = "${self}/secrets/smithoo4_github_ed25519.pub";
+    source = ./smithoo4_github_ed25519.pub;
   };
 
   home.stateVersion = "25.11";
