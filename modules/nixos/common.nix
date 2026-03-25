@@ -1,4 +1,4 @@
-{ pkgs, hostname, timezone, ... }:
+{ pkgs, self, hostname, timezone, ... }:
 {
   # Bootloader
   boot.loader.systemd-boot.enable = true;
