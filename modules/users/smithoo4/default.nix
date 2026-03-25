@@ -1,16 +1,15 @@
 { config, self, ... }:
 {
+  # Secrets
   sops.secrets.smithoo4-password = {
     neededForUsers = true;
   };
-
   sops.secrets.smithoo4-ssh-key = {
     owner = "smithoo4";
     mode = "0600";
   };
 
   # Users
-  users.mutableUsers = false;
   users.users.smithoo4 = {
     isNormalUser = true;
     extraGroups = [ "wheel" ];

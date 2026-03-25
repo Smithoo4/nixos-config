@@ -18,6 +18,9 @@
   sops.defaultSopsFormat = "yaml";
   sops.age.keyFile = "/var/lib/sops-nix/key.txt";
 
+  # Users
+  users.mutableUsers = false;
+
   # Nix
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   nix.gc = {
