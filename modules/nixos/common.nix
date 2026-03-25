@@ -13,6 +13,11 @@
   time.timeZone = timezone;
   i18n.defaultLocale = "en_CA.UTF-8";
 
+  # Sops-nix
+  sops.defaultSopsFile = "${self}/secrets/secrets.yaml";
+  sops.defaultSopsFormat = "yaml";
+  sops.age.keyFile = "/var/lib/sops-nix/key.txt";
+
   # Nix
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   nix.gc = {

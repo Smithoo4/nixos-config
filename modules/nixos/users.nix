@@ -1,10 +1,5 @@
 { config, self, ... }:
 {
-  # Sops-nix
-  sops.defaultSopsFile = "${self}/secrets/secrets.yaml";
-  sops.defaultSopsFormat = "yaml";
-  sops.age.keyFile = "/var/lib/sops-nix/key.txt";
-
   sops.secrets.smithoo4-password = {
     neededForUsers = true;
   };
