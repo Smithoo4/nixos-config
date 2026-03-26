@@ -30,8 +30,7 @@
           inputs.disko.nixosModules.disko
           inputs.sops-nix.nixosModules.sops
           inputs.home-manager.nixosModules.home-manager
-          ./modules/nixos/common.nix
-          ./modules/nixos/openssh.nix
+          ./modules/nixos/common
           ./hosts/${hostname}
         ];
       };

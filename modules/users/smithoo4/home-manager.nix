@@ -1,5 +1,6 @@
 { pkgs, ... }:
 {
+  # User Packages
   home.packages = with pkgs; [
     htop
     tree

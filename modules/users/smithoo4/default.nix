@@ -9,7 +9,7 @@
     mode = "0600";
   };
 
-  # Users
+  # User
   users.users.smithoo4 = {
     isNormalUser = true;
     extraGroups = [ "wheel" ];
@@ -20,8 +20,10 @@
   };
 
   # Home-manager
-  home-manager.useGlobalPkgs = true;
-  home-manager.useUserPackages = true;
-  home-manager.extraSpecialArgs = { inherit self; };
-  home-manager.users.smithoo4 = import ./home-manager.nix;
+  home-manager = {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+    extraSpecialArgs = { inherit self; };
+    users.smithoo4 = import ./home-manager.nix;
+  };
 }
