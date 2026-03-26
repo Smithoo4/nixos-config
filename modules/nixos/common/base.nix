@@ -32,9 +32,6 @@
 
   # Packages
   environment.systemPackages = with pkgs; [
-    age
     git
-    mkpasswd
-    sops
   ];
 }

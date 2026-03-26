@@ -2,6 +2,7 @@
 {
   # User Packages
   home.packages = with pkgs; [
+    sops
     htop
     tree
     wget
