@@ -1,5 +1,9 @@
 { pkgs, self, hostname, timezone, ... }:
 {
+  imports = [
+    ./openssh.nix
+  ];
+
   # Bootloader
   boot.loader.systemd-boot.enable = true;
   boot.loader.systemd-boot.configurationLimit = 10;
@@ -34,4 +38,9 @@
   environment.systemPackages = with pkgs; [
     git
   ];
+
+  # Home-manager
+  home-manager.useGlobalPkgs = true;
+  home-manager.useUserPackages = true;
+
 }

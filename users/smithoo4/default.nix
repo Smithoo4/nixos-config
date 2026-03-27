@@ -1,4 +1,4 @@
-{ config, self, ... }:
+{ config, ... }:
 {
   # Secrets
   sops.secrets.smithoo4-password = {
@@ -20,10 +20,5 @@
   };
 
   # Home-manager
-  home-manager = {
-    useGlobalPkgs = true;
-    useUserPackages = true;
-    extraSpecialArgs = { inherit self; };
-    users.smithoo4 = import ./home-manager.nix;
-  };
+  home-manager.users.smithoo4 = import ./home-manager.nix;
 }
