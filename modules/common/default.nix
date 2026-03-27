@@ -2,6 +2,7 @@
 {
   imports = [
     ./openssh.nix
+    ./msmtp.nix
   ];
 
   # Bootloader
