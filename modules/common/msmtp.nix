@@ -15,7 +15,7 @@
     };
     accounts = {
       default = {
-        host = "smtp.shaw.ca";
+        host = "mail.shaw.ca";
         port = 587;
         user = "smith_oo4";
         from = "smith_oo4@shaw.ca";
