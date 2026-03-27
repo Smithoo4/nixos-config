@@ -3,7 +3,7 @@
   imports = [
     ./hardware-configuration.nix
     ./disko.nix
-    ../../modules/users/smithoo4
+    ../../users/smithoo4
   ];
 
   # Set once at install time. Do NOT change after first boot.

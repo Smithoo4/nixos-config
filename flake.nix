@@ -30,7 +30,7 @@
           inputs.disko.nixosModules.disko
           inputs.sops-nix.nixosModules.sops
           inputs.home-manager.nixosModules.home-manager
-          ./modules/nixos/common
+          ./modules/common
           ./hosts/${hostname}
         ];
       };
