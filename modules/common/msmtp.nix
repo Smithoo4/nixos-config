@@ -26,6 +26,7 @@
       port = 587;
       user = "smith_oo4";
       from = "smith_oo4@shaw.ca";
+      domain = "shaw.ca";
       passwordeval = "cat ${config.sops.secrets.msmtp-password.path}";
     };
   };
