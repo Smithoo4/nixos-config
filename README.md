@@ -33,11 +33,12 @@ Active Development — currently being refined, expanded, and tested.
 - [x] msmtp setup
 - [x] S.M.A.R.T disk monitoring with email notifications via `smartd`
 - [ ] Automatic updates
-    - [ ] Central `flake.lock` update for all hosts 
-    - [ ] Evaluate master host vs. [update-flake-lock](https://github.com/DeterminateSystems/update-flake-lock)
+    - [ ] Central `flake.lock` update for all hosts (Evaluate master host vs. [update-flake-lock](https://github.com/DeterminateSystems/update-flake-lock))
+    - [ ] Schedule auto updates
+    - [ ] Email notifications of failed update or warnings
 
 ### Phase 2: Reverse Proxy & Security
-*Goal: Transition current home servers from Nginx and Fail2Ban to modern alternatives.*
+*Goal: Evaluate alternatives to Nginx and Fail2Ban.*
 - [ ] Set up Caddy
     - [ ] ACME DNS challenge using DuckDNS
     - [ ] Enable HTTP/3
@@ -58,14 +59,14 @@ Active Development — currently being refined, expanded, and tested.
 - [ ] Refactor configuration layout based on lessons learned
 
 ### Phase 4: Authentication & SSO
-*Goal: Evaluate alternatives to previous Authelia + lldap setups.*
+*Goal: Evaluate alternatives to Authelia + lldap.*
 - [ ] Evaluate and deploy SSO
     - [ ] Options: Kanidm, Keycloak, Rauthy, Authentik, Zitadel, Ory, Janssen, Casdoor, or Pomerium
 - [ ] Implement forward auth with reverse proxy
 - [ ] Centralized authentication for all services
 
 ### Phase 5: File Storage & Collaboration
-*Goal: Evaluate alternatives to previous Nextcloud setup.*
+*Goal: Evaluate alternatives to Nextcloud setup.*
 - [ ] Evaluate and deploy storage/collaboration (OpenCloud, Pydio Cells, or Seafile)
 - [ ] Evaluate Office integration (Collabora or OnlyOffice)
 - [ ] Full-text document search (PDF and Office documents)
