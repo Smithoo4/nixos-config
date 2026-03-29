@@ -9,7 +9,6 @@
     "${self}/users/smithoo4"
 
     # Services
-    "${self}/modules/smartd.nix"
     # "${self}/modules/caddy"
   ];
 
