@@ -1,6 +1,6 @@
 # NixOS Home Server Configuration
 
-This repository contains my personal NixOS configuration for building and managing home servers using flakes.
+This repository contains a personal NixOS configuration for building and managing home servers using flakes.
 
 ## Status
 
@@ -10,116 +10,80 @@ Active Development — currently being refined, expanded, and tested.
 
 ## Hosts
 
-| Host     | Status              | Purpose                 |
-|----------|-------------------|--------------------------|
-| oneohm   | Active Development | Testing and development |
-| twoohm   | Planned           | TBD                      |
-| threeohm | Planned           | TBD                      |
-| fourohm | Planned           | TBD                      |
+| Host | Status | Purpose |
+| :--- | :--- | :--- |
+| **oneohm** | Active Development | Testing and development |
+| **twoohm** | Planned | TBD |
+| **threeohm** | Planned | TBD |
+| **fourohm** | Planned | TBD |
 
-
-All hosts except `oneohm` are still in the planning stage.
-
----
-
-## To Do
-
-### System and Maintenance
-- [ ] S.M.A.R.T disk monitoring with email notifications via smartd
-- [ ] Automatic updates with notifications  
+*Note: All hosts except `oneohm` are currently in the planning stage.*
 
 ---
 
-### Reverse Proxy (Caddy)
-- [ ] Set up Caddy (previous experience with Nginx — trying something new)  
-  - [ ] ACME DNS challenge using DuckDNS  
-  - [ ] Enable HTTP/3  
-  - [ ] Hardened proxy connections  
-  - [ ] Strict host matching  
-    - Drop all unmatched requests (similar to Nginx 444 or Traefik sniStrict)  
-- [ ] Set up CrowdSec (previously used Fail2Ban — exploring alternatives)  
+## Roadmap & Implementation
 
----
+### Phase 1: Core System & Infrastructure
+- [x] Initial installation guide [here](https://github.com/Smithoo4/nixos-config/blob/main/nixos-homeserver-install-guide.md)
+    - [x] Install NixOS from scratch (Flakes + Disko)
+    - [x] Home Manager and Git integration
+    - [x] Secrets Management via SOPS-Nix
+        - *Evaluated Agenix; proceeded with SOPS-Nix as the primary solution.*
+- [x] Refactor configuration for modular, multi-host support
+- [x] msmtp setup
+- [x] S.M.A.R.T disk monitoring with email notifications via `smartd`
+- [ ] Automatic updates
+    - [ ] Central `flake.lock` update for all hosts 
+    - [ ] Evaluate master host vs. [update-flake-lock](https://github.com/DeterminateSystems/update-flake-lock)
 
-### Deployment and Documentation
-- [ ] Write installation and deployment tutorial using this repository  
-  - Similar to: nixos-homeserver-install-guide.md  
-  - Use this repo directly as the system configuration  
-  - Cover full flow:
-    - Disk provisioning with Disko  
-    - Initial install using flakes  
-    - Secrets bootstrapping (sops-nix / age keys)  
-    - First boot considerations  
-    - Rebuild and update workflow  
-  - Goal: make spinning up a new host from this repo straightforward and repeatable  
+### Phase 2: Reverse Proxy & Security
+*Goal: Transition current home servers from Nginx and Fail2Ban to modern alternatives.*
+- [ ] Set up Caddy
+    - [ ] ACME DNS challenge using DuckDNS
+    - [ ] Enable HTTP/3
+    - [ ] Hardened proxy connections
+    - [ ] Strict host matching (Drop unmatched requests)
+- [ ] Set up CrowdSec
+    - [ ] SSH protection
+    - [ ] WebServer protection
 
----
+### Phase 3: Deployment & Documentation
+- [ ] Comprehensive deployment tutorial
+    - [ ] Install second host (`twoohm`) pulling config from GitHub
+    - [ ] Evaluate [nixos-anywhere](https://github.com/nix-community/nixos-anywhere)
 
-### Authentication / SSO
-- [ ] Evaluate and deploy one of:  
-  - Kanidm, Keycloak, Rauthy, Authentik, Zitadel, Ory, Janssen, Casdoor, or Pomerium  
-  (previously used Authelia + lldap)  
+### Phase 3a: Ideas & Modular Exploration (Optional)
+- [ ] Store configuration exclusively in GitHub (no local persistence)
+- [ ] Evaluate [flake-parts](https://github.com/hercules-ci/flake-parts)
+- [ ] Refactor configuration layout based on lessons learned
 
-- [ ] Implement SSO  
-  - [ ] Forward auth with reverse proxy  
-  - [ ] Centralized authentication for all services  
+### Phase 4: Authentication & SSO
+*Goal: Evaluate alternatives to previous Authelia + lldap setups.*
+- [ ] Evaluate and deploy SSO
+    - [ ] Options: Kanidm, Keycloak, Rauthy, Authentik, Zitadel, Ory, Janssen, Casdoor, or Pomerium
+- [ ] Implement forward auth with reverse proxy
+- [ ] Centralized authentication for all services
 
----
+### Phase 5: File Storage & Collaboration
+*Goal: Evaluate alternatives to previous Nextcloud setup.*
+- [ ] Evaluate and deploy storage/collaboration (OpenCloud, Pydio Cells, or Seafile)
+- [ ] Evaluate Office integration (Collabora or OnlyOffice)
+- [ ] Full-text document search (PDF and Office documents)
 
-### File Storage and Collaboration
-- [ ] Evaluate and deploy one of:  
-  - OpenCloud, Pydio Cells, or Seafile (previously used Nextcloud)  
+### Phase 6: Media & Content
+- [ ] Photo management (Immich, PhotoPrism, Lychee, or Phase 5 selection)
+- [ ] Recipe management (Mealie, Tandoor Recipes, or Grocy)
+- [ ] E-book servers (Calibre-Web, Kavita, Komga, or Ubooquity)
 
-- [ ] Office integration  
-  - [ ] Collabora or OnlyOffice  
-
-- [ ] Full-text document search  
-
----
-
-### Media and Content
-- [ ] Photo management:  
-  - Immich, PhotoPrism, or Lychee  
-
-- [ ] Recipe management:  
-  - Mealie, Tandoor Recipes, or Grocy  
-
-- [ ] E-book servers:  
-  - Calibre-Web, Kavita, Komga, or Ubooquity  
-
----
-
-### Storage and Backups
-- [ ] Storage system:  
-  - ZFS, Btrfs, or other RAID/NAS solutions  
-
-- [ ] Off-site backups  
-
----
-
-## Completed
-
-- [x] Install NixOS from scratch  
-  https://github.com/Smithoo4/nixos-config/blob/main/nixos-homeserver-install-guide.md  
-  - [x] Flakes  
-  - [x] Disko  
-  - [x] Secrets management  
-    - [ ] Agenix (initial attempt unsuccessful — but did not try to hard)  
-    - [x] SOPS-Nix (working)  
-    - [x] Bootstrap process for new hosts  
-  - [x] Home Manager and Git integration  
-
-- [x] Refactor configuration  
-  - Prepared for multiple hosts  
-  - Improved layout and structure  
-
-- [x] msmtp setup  
+### Phase 7: Storage & Backups
+- [ ] Storage system implementation (ZFS, Btrfs, or other RAID/NAS solutions)
+- [ ] Off-site backups
 
 ---
 
 ## Goals
 
-- Learn and apply NixOS best practices  
-- Build a flexible, reproducible home server environment  
-- Explore alternatives to previously used tools and services  
-- Maintain a clean, modular, and scalable configuration  
+* Learn and apply NixOS best practices.
+* Build a flexible, reproducible home server environment.
+* Explore alternatives to previously used tools and services.
+* Maintain a clean, modular, and scalable configuration.
