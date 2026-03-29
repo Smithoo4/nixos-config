@@ -15,6 +15,8 @@ Active Development — currently being refined, expanded, and tested.
 | oneohm   | Active Development | Testing and development |
 | twoohm   | Planned           | TBD                      |
 | threeohm | Planned           | TBD                      |
+| fourohm | Planned           | TBD                      |
+
 
 All hosts except `oneohm` are still in the planning stage.
 
@@ -23,8 +25,7 @@ All hosts except `oneohm` are still in the planning stage.
 ## To Do
 
 ### System and Maintenance
-- [ ] S.M.A.R.T error notifications  
-  (Initial focus: testing non-common services and msmtp setup)  
+- [ ] S.M.A.R.T disk monitoring with email notifications via smartd
 - [ ] Automatic updates with notifications  
 
 ---

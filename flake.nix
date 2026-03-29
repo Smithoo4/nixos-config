@@ -42,13 +42,11 @@
         timezone = "America/Edmonton";
       };
 
-      # auir = mkHost {
+      # twoohm = mkHost {
       #   system = "aarch64-linux";
       #   hostname = "auir";
       #   timezone = "TODO";
       # };
-      # artimoose = mkHost { system = "x86_64-linux"; hostname = "artimoose"; };
-      # gypsystudio = mkHost { system = "x86_64-linux"; hostname = "gypsystudio"; };
     };
   };
 }
