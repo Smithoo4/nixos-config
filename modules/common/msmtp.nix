@@ -34,15 +34,3 @@
   # Root mail alias
   environment.etc."aliases".source = config.sops.templates."aliases".path;
 }
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,0 +1,405 @@
+
+--- ./modules/smartd.nix ---
+{ ... }:
+{
+  # S.M.A.R.T disk monitoring
+  services.smartd = {
+    enable = true;
+    defaults.monitored = "-a -o on -S on -W 4,45,50 -s (S/../.././02|L/../../6/03)";
+    notifications.mail = {
+      enable = true;
+      recipient = "root";
+    };
+  };
+}
+
+--- ./modules/common/msmtp.nix ---
+{ config, ... }:
+{
+  # Sops-nix
+  sops.secrets.msmtp-password = {};
+  sops.secrets.msmtp-root-alias = {};
+  sops.templates."aliases" = {
+    content = ''
+      root: ${config.sops.placeholder.msmtp-root-alias}
+    '';
+  };
+
+  # msmtp
+  programs.msmtp = {
+    enable = true;
+    setSendmail = true;
+
+    defaults = {
+      tls = "on";
+      auth = "on";
+      tls_starttls = "on";
+      aliases = "/etc/aliases";
+    };
+
+    accounts.default = {
+      host = "mail.shaw.ca";
+      port = 587;
+      user = "smith_oo4";
+      from = "smith_oo4@shaw.ca";
+      domain = "shaw.ca";
+      passwordeval = "cat ${config.sops.secrets.msmtp-password.path}";
+    };
+  };
+
+  # Root mail alias
+  environment.etc."aliases".source = config.sops.templates."aliases".path;
+}
+
+--- ./modules/common/openssh.nix ---
+{ ... }:
+{
+  # OpenSSH
+  services.openssh = {
+    enable = true;
+    openFirewall = true;
+    settings = {
+      PasswordAuthentication = false;
+      KbdInteractiveAuthentication = false;
+      PermitRootLogin = "no";
+    };
+  };
+}
+
+--- ./modules/common/default.nix ---
+{ pkgs, self, hostname, timezone, ... }:
+{
+  imports = [
+    ./openssh.nix
+    ./msmtp.nix
+  ];
+
+  # Bootloader
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.systemd-boot.configurationLimit = 10;
+  boot.loader.efi.canTouchEfiVariables = true;
+
+  # zram
+  zramSwap.enable = true;
+
+  # Hostname & locale
+  networking.hostName = hostname;
+  time.timeZone = timezone;
+  i18n.defaultLocale = "en_CA.UTF-8";
+
+  # Sops-nix
+  sops.defaultSopsFile = "${self}/secrets/secrets.yaml";
+  sops.defaultSopsFormat = "yaml";
+  sops.age.keyFile = "/var/lib/sops-nix/key.txt";
+
+  # Users
+  users.mutableUsers = false;
+
+  # Nix
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 1w";
+  };
+  nix.settings.auto-optimise-store = true;
+
+  # Packages
+  environment.systemPackages = with pkgs; [
+    git
+  ];
+
+  # Home-manager
+  home-manager.useGlobalPkgs = true;
+  home-manager.useUserPackages = true;
+}
+
+--- ./users/smithoo4/home-manager.nix ---
+{ pkgs, ... }:
+{
+  # User Packages
+  home.packages = with pkgs; [
+    sops
+    htop
+    tree
+    wget
+  ];
+
+  # Git
+  programs.git = {
+    enable = true;
+    settings = {
+      user = {
+        name = "smithoo4";
+        email = "13087392+Smithoo4@users.noreply.github.com";
+      };
+      init.defaultBranch = "main";
+    };
+  };
+
+  # SSH client
+  programs.ssh = {
+    enable = true;
+    enableDefaultConfig = false;
+    matchBlocks = {
+      "github.com" = {
+        hostname = "github.com";
+        user = "git";
+        identityFile = "/run/secrets/smithoo4-ssh-key";
+      };
+    };
+  };
+
+  home.file.".ssh/smithoo4_github_ed25519.pub" = {
+    source = ./smithoo4_github_ed25519.pub;
+  };
+
+  home.stateVersion = "25.11";
+}
+
+--- ./users/smithoo4/default.nix ---
+{ config, ... }:
+{
+  # Secrets
+  sops.secrets.smithoo4-password = {
+    neededForUsers = true;
+  };
+  sops.secrets.smithoo4-ssh-key = {
+    owner = "smithoo4";
+    mode = "0600";
+  };
+
+  # User
+  users.users.smithoo4 = {
+    isNormalUser = true;
+    extraGroups = [ "wheel" ];
+    hashedPasswordFile = config.sops.secrets.smithoo4-password.path;
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMpbgg2fUmjFNcQ/ByytJKnYZYpl8kOcocbK8vAl/8Yq smithoo4@fedora"
+    ];
+  };
+
+  # Home-manager
+  home-manager.users.smithoo4 = import ./home-manager.nix;
+}
+
+--- ./flake.nix ---
+{
+  description = "NixOS home servers";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+
+    disko = {
+      url = "github:nix-community/disko/latest";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    home-manager = {
+      url = "github:nix-community/home-manager/release-25.11";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+
+  outputs = { self, nixpkgs, ... }@inputs:
+  let
+    mkHost = { system, hostname, timezone ? "America/Edmonton" }:
+      nixpkgs.lib.nixosSystem {
+        inherit system;
+        specialArgs = { inherit inputs self hostname timezone; };
+        modules = [
+          inputs.disko.nixosModules.disko
+          inputs.sops-nix.nixosModules.sops
+          inputs.home-manager.nixosModules.home-manager
+          ./modules/common
+          ./hosts/${hostname}
+        ];
+      };
+  in {
+    nixosConfigurations = {
+      oneohm = mkHost {
+        system = "x86_64-linux";
+        hostname = "oneohm";
+        timezone = "America/Edmonton";
+      };
+
+      # twoohm = mkHost {
+      #   system = "aarch64-linux";
+      #   hostname = "auir";
+      #   timezone = "TODO";
+      # };
+    };
+  };
+}
+
+--- ./README.md ---
+# NixOS Home Server Configuration
+
+This repository contains a personal NixOS configuration for building and managing home servers using flakes.
+
+## Status
+
+Active Development — currently being refined, expanded, and tested.
+
+---
+
+## Hosts
+
+| Host | Status | Purpose |
+| :--- | :--- | :--- |
+| **oneohm** | Active Development | Testing and development |
+| **twoohm** | Planned | TBD |
+| **threeohm** | Planned | TBD |
+| **fourohm** | Planned | TBD |
+
+*Note: All hosts except `oneohm` are currently in the planning stage.*
+
+---
+
+## Roadmap & Implementation
+
+### Phase 1: Core System & Infrastructure
+- [x] Initial installation guide [here](https://github.com/Smithoo4/nixos-config/blob/main/nixos-homeserver-install-guide.md)
+    - [x] Install NixOS from scratch (Flakes + Disko)
+    - [x] Home Manager and Git integration
+    - [x] Secrets Management via SOPS-Nix
+        - *Evaluated Agenix; proceeded with SOPS-Nix as the primary solution.*
+- [x] Refactor configuration for modular, multi-host support
+- [x] msmtp setup
+- [x] S.M.A.R.T disk monitoring with email notifications via `smartd`
+- [ ] Automatic updates
+    - [ ] Central `flake.lock` update for all hosts (Evaluate master host vs. [update-flake-lock](https://github.com/DeterminateSystems/update-flake-lock))
+    - [ ] Schedule auto updates
+    - [ ] Email notifications of failed update or warnings
+
+### Phase 2: Reverse Proxy & Security
+*Goal: Evaluate alternatives to Nginx and Fail2Ban.*
+- [ ] Set up Caddy
+    - [ ] ACME DNS challenge using DuckDNS
+    - [ ] Enable HTTP/3
+    - [ ] Hardened proxy connections
+    - [ ] Strict host matching (Drop unmatched requests)
+- [ ] Set up CrowdSec
+    - [ ] SSH protection
+    - [ ] WebServer protection
+
+### Phase 3: Deployment & Documentation
+- [ ] Comprehensive deployment tutorial
+    - [ ] Install second host (`twoohm`) pulling config from GitHub
+    - [ ] Evaluate [nixos-anywhere](https://github.com/nix-community/nixos-anywhere)
+
+### Phase 3a: Ideas & Modular Exploration (Optional)
+- [ ] Store configuration exclusively in GitHub (no local persistence)
+- [ ] Evaluate [flake-parts](https://github.com/hercules-ci/flake-parts)
+- [ ] Refactor configuration layout based on lessons learned
+
+### Phase 4: Authentication & SSO
+*Goal: Evaluate alternatives to Authelia + lldap.*
+- [ ] Evaluate and deploy SSO
+    - [ ] Options: Kanidm, Keycloak, Rauthy, Authentik, Zitadel, Ory, Janssen, Casdoor, or Pomerium
+- [ ] Implement forward auth with reverse proxy
+- [ ] Centralized authentication for all services
+
+### Phase 5: File Storage & Collaboration
+*Goal: Evaluate alternatives to Nextcloud setup.*
+- [ ] Evaluate and deploy storage/collaboration (OpenCloud, Pydio Cells, or Seafile)
+- [ ] Evaluate Office integration (Collabora or OnlyOffice)
+- [ ] Full-text document search (PDF and Office documents)
+
+### Phase 6: Media & Content
+- [ ] Photo management (Immich, PhotoPrism, Lychee, or Phase 5 selection)
+- [ ] Recipe management (Mealie, Tandoor Recipes, or Grocy)
+- [ ] E-book servers (Calibre-Web, Kavita, Komga, or Ubooquity)
+
+### Phase 7: Storage & Backups
+- [ ] Storage system implementation (ZFS, Btrfs, or other RAID/NAS solutions)
+- [ ] Off-site backups
+
+---
+
+## Goals
+
+* Learn and apply NixOS best practices.
+* Build a flexible, reproducible home server environment.
+* Explore alternatives to previously used tools and services.
+* Maintain a clean, modular, and scalable configuration.
+
+--- ./hosts/oneohm/hardware-configuration.nix ---
+# Do not modify this file!  It was generated by ‘nixos-generate-config’
+# and may be overwritten by future invocations.  Please make changes
+# to /etc/nixos/configuration.nix instead.
+{ config, lib, pkgs, modulesPath, ... }:
+
+{
+  imports =
+    [ (modulesPath + "/profiles/qemu-guest.nix")
+    ];
+
+  boot.initrd.availableKernelModules = [ "ahci" "xhci_pci" "virtio_pci" "sr_mod" "virtio_blk" ];
+  boot.initrd.kernelModules = [ ];
+  boot.kernelModules = [ "kvm-intel" ];
+  boot.extraModulePackages = [ ];
+
+  nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+}
+
+--- ./hosts/oneohm/disko.nix ---
+{ ... }:
+{
+  disko.devices = {
+    disk = {
+      main = {
+        device = "/dev/vda";
+        type = "disk";
+        content = {
+          type = "gpt";
+          partitions = {
+            ESP = {
+              type = "EF00";
+              size = "512M";
+              content = {
+                type = "filesystem";
+                format = "vfat";
+                mountpoint = "/boot";
+                mountOptions = [ "umask=0077" ];
+              };
+            };
+            root = {
+              size = "100%";
+              content = {
+                type = "filesystem";
+                format = "ext4";
+                mountpoint = "/";
+                mountOptions = [ "defaults" "noatime" ];
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}
+
+--- ./hosts/oneohm/default.nix ---
+{ self, ... }:
+{
+  imports = [
+    # Hardware
+    ./hardware-configuration.nix
+    ./disko.nix
+
+    # Users
+    "${self}/users/smithoo4"
+
+    # Services
+    # "${self}/modules/caddy"
+  ];
+
+  # Set once at install time. Do NOT change after first boot.
+  system.stateVersion = "25.11";
+}
