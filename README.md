@@ -83,7 +83,7 @@ All hosts except `oneohm` are still in the planning stage.
 - [ ] Recipe management:  
   - Mealie, Tandoor Recipes, or Grocy  
 
-- [ ] E-book and comic servers:  
+- [ ] E-book servers:  
   - Calibre-Web, Kavita, Komga, or Ubooquity  
 
 ---
