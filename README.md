@@ -32,6 +32,7 @@ Active Development — currently being refined, expanded, and tested.
 - [x] Refactor configuration for modular, multi-host support
 - [x] msmtp setup
 - [x] S.M.A.R.T disk monitoring with email notifications via `smartd`
+ - Enable on physical hosts via `"${self}/modules/smartd.nix"` in host `default.nix`
 - [ ] Automatic updates
     - [ ] Central `flake.lock` update for all hosts (Evaluate master host vs. [update-flake-lock](https://github.com/DeterminateSystems/update-flake-lock))
     - [ ] Schedule auto updates

@@ -44,7 +44,7 @@
 
       # twoohm = mkHost {
       #   system = "aarch64-linux";
-      #   hostname = "auir";
+      #   hostname = "twoohm";
       #   timezone = "TODO";
       # };
     };
