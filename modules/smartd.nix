@@ -3,16 +3,16 @@
   # S.M.A.R.T disk monitoring
   services.smartd = {
     enable = true;
-    defaults = ''
+    defaults.monitored = ''
       -a
       -o on
-      -s (S/../.././02|L/../../6/03)
+      -S on
       -W 4,45,50
+      -s (S/../.././02|L/../../6/03)
     '';
     notifications.mail = {
       enable = true;
       recipient = "root";
     };
-    notifications.test = true;
   };
 }
