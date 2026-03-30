@@ -34,9 +34,12 @@ Active Development — currently being refined, expanded, and tested.
 - [x] S.M.A.R.T disk monitoring with email notifications via `smartd`
  - Enable on physical hosts via `"${self}/modules/smartd.nix"` in host `default.nix`
 - [ ] Automatic updates
-    - [ ] Central `flake.lock` update for all hosts (Evaluate master host vs. [update-flake-lock](https://github.com/DeterminateSystems/update-flake-lock))
+    - [X] Central `flake.lock` update for all hosts (Evaluate master host vs. [update-flake-lock](https://github.com/DeterminateSystems/update-flake-lock))
     - [ ] Schedule auto updates
     - [ ] Email notifications of failed update or warnings
+- [ ] Static ip address (limited to Virt Manager nextwork used for testing)
+    - [ ] IPv4
+    - [ ] IPv6
 
 ### Phase 2: Reverse Proxy & Security
 *Goal: Evaluate alternatives to Nginx and Fail2Ban.*
@@ -58,6 +61,9 @@ Active Development — currently being refined, expanded, and tested.
 - [ ] Store configuration exclusively in GitHub (no local persistence)
 - [ ] Evaluate [flake-parts](https://github.com/hercules-ci/flake-parts)
 - [ ] Refactor configuration layout based on lessons learned
+- [ ] Dynamic dns Using DuckDNS on Public Network
+     - [ ] IPv4 with NAT Port Forwarding
+     - [ ] IPv6  
 
 ### Phase 4: Authentication & SSO
 *Goal: Evaluate alternatives to Authelia + lldap.*
