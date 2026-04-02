@@ -9,7 +9,7 @@
       "-L"
     ];
     dates = "Sun *-*-* 01:00:00";
-    randomizedDelaySecs = 300;
+    randomizedDelaySec = "5min";
     allowReboot = true;
   };
 }

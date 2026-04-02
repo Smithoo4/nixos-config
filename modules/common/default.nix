@@ -4,6 +4,7 @@
     ./openssh.nix
     ./msmtp.nix
     ./auto-upgrade.nix
+    ./nix-maintenance.nix
   ];
 
   # Bootloader
@@ -27,21 +28,16 @@
   # Users
   users.mutableUsers = false;
 
-  # Nix
+  # Home-manager
+  home-manager.useGlobalPkgs = true;
+  home-manager.useUserPackages = true;
+
+  # Nix experimental features
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
-  nix.gc = {
-    automatic = true;
-    dates = "weekly";
-    options = "--delete-older-than 1w";
-  };
-  nix.settings.auto-optimise-store = true;
 
   # Packages
   environment.systemPackages = with pkgs; [
     git
   ];
 
-  # Home-manager
-  home-manager.useGlobalPkgs = true;
-  home-manager.useUserPackages = true;
 }
