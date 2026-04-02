@@ -3,6 +3,7 @@
   imports = [
     ./openssh.nix
     ./msmtp.nix
+    ./auto-upgrade.nix
   ];
 
   # Bootloader
