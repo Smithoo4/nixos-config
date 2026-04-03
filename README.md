@@ -35,8 +35,8 @@ Active Development — currently being refined, expanded, and tested.
  - Enable on physical hosts via `"${self}/modules/smartd.nix"` in host `default.nix`
 - [ ] Automatic updates
     - [X] Central `flake.lock` update for all hosts (Evaluate master host vs. [update-flake-lock](https://github.com/DeterminateSystems/update-flake-lock))
-    - [ ] Schedule auto updates
-    - [ ] Email notifications of failed update or warnings
+    - [X] Schedule auto updates
+    - [X] Email notifications of failed update or warnings
 - [ ] Static ip address (limited to Virt Manager nextwork used for testing)
     - [ ] IPv4
     - [ ] IPv6
