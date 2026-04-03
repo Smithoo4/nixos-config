@@ -12,4 +12,9 @@
     randomizedDelaySec = "5min";
     allowReboot = true;
   };
+
+  # Notify root on failure
+  systemd.services.nixos-upgrade = {
+    unitConfig.OnFailure = [ "notify-failure@%n.service" ];
+  };
 }

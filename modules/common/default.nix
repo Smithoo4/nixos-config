@@ -3,6 +3,7 @@
   imports = [
     ./openssh.nix
     ./msmtp.nix
+    ./notify-failure.nix
     ./auto-upgrade.nix
     ./nix-maintenance.nix
   ];
