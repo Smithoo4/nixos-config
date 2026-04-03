@@ -32,6 +32,10 @@ in
     '';
 
     # Firewall
-    openFirewall = true;
+    # openFirewall = true; #Unstable option look into in the future
   };
+
+   #FireWall
+   networking.firewall.allowedTCPPorts = [ 80 443 ];
+   networking.firewall.allowedUDPPorts = [ 443 ];
 }
