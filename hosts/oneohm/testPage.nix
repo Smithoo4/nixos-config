@@ -2,6 +2,7 @@
 
 {
   services.caddy.virtualHosts."oneohm.duckdns.org".extraConfig = ''
+    import security
     respond <<EOF
     Hello from Caddy on oneohm!
 
