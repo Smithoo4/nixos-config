@@ -25,7 +25,7 @@ in
     #acmeCA = "https://acme-staging-v02.api.letsencrypt.org/directory";  # staging for testing
 
     globalConfig = ''
-      #ACME using DuckDNS DNS-01 challenge
+      # ACME using DuckDNS DNS-01 challenge
       acme_dns duckdns {env.DUCKDNS_TOKEN}
       # SNI enforcement
       servers {
@@ -44,21 +44,19 @@ in
         X-Frame-Options "DENY"
         X-Content-Type-Options "nosniff"
         Referrer-Policy "strict-origin-when-cross-origin"
-        # Override Permissions-Policy per virtualhost for services needing camera/microphone (e.g. Immich)
+        # Override Permissions-Policy per virtualhost for services needing camera/microphone
         Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
       }
     }
     '';
-
-    # Firewall
-    # openFirewall = true;  # not available in 25.11 - enable when stable on your channel
+    #openFirewall = true;  # not available in 25.11 - enable when stable on your channel
   };
 
    # Catch-all Blocks
    services.caddy.virtualHosts.":443".extraConfig = "abort";
    services.caddy.virtualHosts.":80".extraConfig = "abort";
    
-   #FireWall
+   # FireWall
    networking.firewall.allowedTCPPorts = [ 80 443 ];
    networking.firewall.allowedUDPPorts = [ 443 ];
 }
