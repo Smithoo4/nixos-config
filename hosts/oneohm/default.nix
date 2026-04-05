@@ -10,6 +10,7 @@
 
     # Services
     "${self}/modules/caddy"
+    "${self}/modules/caddy/testPage.nix"
   ];
 
   # Set once at install time. Do NOT change after first boot.
