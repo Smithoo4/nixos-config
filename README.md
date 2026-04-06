@@ -33,18 +33,18 @@ Active Development — currently being refined, expanded, and tested.
 - [x] msmtp setup
 - [x] S.M.A.R.T disk monitoring with email notifications via `smartd`
  - Enable on physical hosts via `"${self}/modules/smartd.nix"` in host `default.nix`
-- [ ] Automatic updates
+- [X] Automatic updates
     - [X] Central `flake.lock` update for all hosts (Evaluate master host vs. [update-flake-lock](https://github.com/DeterminateSystems/update-flake-lock))
     - [X] Schedule auto updates
     - [X] Email notifications of failed update or warnings
 
 ### Phase 2: Reverse Proxy & Security
 *Goal: Evaluate alternatives to Nginx and Fail2Ban.*
-- [ ] Set up Caddy
-    - [ ] ACME DNS challenge using DuckDNS
-    - [ ] Enable HTTP/3
-    - [ ] Hardened proxy connections
-    - [ ] Strict host matching (Drop unmatched requests)
+- [X] Set up Caddy
+    - [X] ACME DNS challenge using DuckDNS
+    - [X] Enable HTTP/3
+    - [X] Hardened proxy connections
+    - [X] Strict host matching (Drop unmatched requests)
 - [ ] Set up CrowdSec
     - [ ] SSH protection
     - [ ] WebServer protection
