@@ -1,4 +1,156 @@
 
+--- ./modules/reverse-proxy/caddy.nix ---
+{ config, pkgs, lib, ... }:
+
+let
+  # Plugins
+  customCaddy = pkgs.caddy.withPlugins {
+    plugins = [ "github.com/caddy-dns/duckdns@v0.5.0" ];
+    hash = "sha256-uMYFZJ+dOoahO9+nAU+bGiuFQRmPbPWFwH1uH8xBcFQ=";
+  };
+in
+{
+  # Secrets
+  sops.secrets.duckdns-token = {};
+  sops.templates."caddy-env" = {
+    content = ''
+      DUCKDNS_TOKEN=${config.sops.placeholder.duckdns-token}
+    '';
+  };
+  systemd.services.caddy.serviceConfig.EnvironmentFile = config.sops.templates."caddy-env".path;
+
+  services.caddy = {
+    enable = true;
+    package = customCaddy;
+
+    email = "smith_oo4@shaw.ca";
+    #acmeCA = "https://acme-staging-v02.api.letsencrypt.org/directory";  # staging for testing
+
+    globalConfig = ''
+      # ACME using DuckDNS DNS-01 challenge
+      acme_dns duckdns {env.DUCKDNS_TOKEN}
+      # SNI enforcement
+      servers {
+        strict_sni_host on
+      }      
+    '';
+
+    extraConfig = ''
+    (security) {
+      tls {
+        curves x25519 secp256r1 secp384r1
+        protocols tls1.3
+      }
+      header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Override Permissions-Policy per virtualhost for services needing camera/microphone
+        Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+      }
+    }
+    '';
+    #openFirewall = true;  # not available in 25.11 - enable when stable on your channel
+  };
+
+   # Catch-all Blocks
+   services.caddy.virtualHosts.":443".extraConfig = "abort";
+   services.caddy.virtualHosts.":80".extraConfig = "abort";
+   
+   # FireWall
+   networking.firewall.allowedTCPPorts = [ 80 443 ];
+   networking.firewall.allowedUDPPorts = [ 443 ];
+}
+
+--- ./modules/reverse-proxy/testPage.nix ---
+{ config, ... }:
+{
+  services.caddy.virtualHosts."${config.networking.hostName}.duckdns.org" = {
+    extraConfig = ''
+      import security
+      header Content-Type text/html
+      respond <<HTML
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <title>${config.networking.hostName}</title>
+          <style>
+              body {
+                  margin: 0;
+                  background: #050505;
+                  color: #00ff41;
+                  font-family: "Courier New", Courier, monospace;
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  height: 100vh;
+                  overflow: hidden;
+              }
+              /* Scanline effect */
+              body::before {
+                  content: " ";
+                  position: absolute;
+                  top: 0; left: 0; bottom: 0; right: 0;
+                  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                              linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+                  background-size: 100% 2px, 3px 100%;
+                  z-index: 2;
+                  pointer-events: none;
+              }
+              .container {
+                  text-align: center;
+                  border: 2px solid #00ff41;
+                  padding: 4rem;
+                  box-shadow: 0 0 20px #00ff41, inset 0 0 20px #00ff41;
+                  position: relative;
+                  z-index: 1;
+              }
+              h1 {
+                  font-size: 3.5rem;
+                  margin: 0;
+                  text-transform: uppercase;
+                  letter-spacing: 10px;
+                  text-shadow: 0 0 10px #00ff41;
+              }
+              p {
+                  margin-top: 2rem;
+                  font-size: 1.2rem;
+                  letter-spacing: 2px;
+                  opacity: 0.8;
+              }
+              .flicker {
+                  animation: pulse 2s infinite;
+              }
+              @keyframes pulse {
+                  0% { opacity: 1; }
+                  50% { opacity: 0.4; }
+                  100% { opacity: 1; }
+              }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              <h1>${config.networking.hostName}</h1>
+              <p class="flicker">System is online and secure</p>
+          </div>
+      </body>
+      </html>
+HTML 200
+    '';
+  };
+}
+
+--- ./modules/reverse-proxy/default.nix ---
+{  ... }:
+{
+  imports = [
+     ./caddy.nix
+     ./testPage.nix
+  ];
+}
+
 --- ./modules/smartd.nix ---
 { ... }:
 {
@@ -51,6 +203,40 @@
   environment.etc."aliases".source = config.sops.templates."aliases".path;
 }
 
+--- ./modules/common/auto-upgrade.nix ---
+{ config, ... }:
+{
+  # Auto upgrade
+  system.autoUpgrade = {
+    enable = true;
+    flake = "github:Smithoo4/nixos-config#${config.networking.hostName}";
+    flags = [
+      "--no-write-lock-file"
+      "-L"
+    ];
+    dates = "Sun *-*-* 01:00:00";
+    randomizedDelaySec = "5min";
+    allowReboot = true;
+  };
+
+  # Notify root on failure
+  systemd.services.nixos-upgrade = {
+    unitConfig.OnFailure = [ "notify-failure@%n.service" ];
+  };
+}
+
+--- ./modules/common/nix-maintenance.nix ---
+{ ... }:
+{
+  # Nix maintenance
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 1w";
+  };
+  nix.settings.auto-optimise-store = true;
+}
+
 --- ./modules/common/openssh.nix ---
 { ... }:
 {
@@ -66,12 +252,49 @@
   };
 }
 
+--- ./modules/common/notify-failure.nix ---
+{ config, pkgs, ... }:
+
+{
+  # Reusable failure notifier for any systemd service
+  systemd.services."notify-failure@" = {
+    description = "Email notification when a systemd service fails";
+    serviceConfig = {
+      Type = "oneshot";
+      User = "root";
+      ExecStart = let
+        notifier = pkgs.writeShellScript "notify-failure" ''
+          #!/bin/sh
+          UNIT="$1"
+          HOSTNAME="${config.networking.hostName}"
+
+          ${pkgs.msmtp}/bin/msmtp root <<EOF
+          To: root
+          Subject: [NixOS] Service $UNIT failed on $HOSTNAME
+
+          Service: $UNIT
+          Host: $HOSTNAME
+          Time: $(date)
+
+          === Full status (last 1000 lines) ===
+          $(systemctl status -n 1000 "$UNIT")
+
+          EOF
+        '';
+      in "${notifier} %i";
+    };
+  };
+}
+
 --- ./modules/common/default.nix ---
 { pkgs, self, hostname, timezone, ... }:
 {
   imports = [
     ./openssh.nix
     ./msmtp.nix
+    ./notify-failure.nix
+    ./auto-upgrade.nix
+    ./nix-maintenance.nix
   ];
 
   # Bootloader
@@ -95,23 +318,21 @@
   # Users
   users.mutableUsers = false;
 
-  # Nix
+  # Home-manager
+  home-manager.useGlobalPkgs = true;
+  home-manager.useUserPackages = true;
+
+  # Nix experimental features
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
-  nix.gc = {
-    automatic = true;
-    dates = "weekly";
-    options = "--delete-older-than 1w";
-  };
-  nix.settings.auto-optimise-store = true;
+
+  # Nix Download Buffer
+  nix.settings.download-buffer-size = 268435456; # 256 MB
 
   # Packages
   environment.systemPackages = with pkgs; [
     git
   ];
 
-  # Home-manager
-  home-manager.useGlobalPkgs = true;
-  home-manager.useUserPackages = true;
 }
 
 --- ./users/smithoo4/home-manager.nix ---
@@ -293,6 +514,15 @@
   };
 }
 
+--- ./hosts/oneohm/testPage.nix ---
+{ config, lib, ... }:
+
+{
+  services.caddy.virtualHosts."oneohm.duckdns.org".extraConfig = ''
+    import security
+  '';
+}
+
 --- ./hosts/oneohm/default.nix ---
 { self, ... }:
 {
@@ -305,8 +535,9 @@
     "${self}/users/smithoo4"
 
     # Services
-    # "${self}/modules/caddy"
-  ];
+    "${self}/modules/reverse-proxy"
+
+    ];
 
   # Set once at install time. Do NOT change after first boot.
   system.stateVersion = "25.11";
