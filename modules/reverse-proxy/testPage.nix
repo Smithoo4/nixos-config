@@ -9,67 +9,65 @@
       <html lang="en">
       <head>
           <meta charset="UTF-8">
-          <title>NODE: ${config.networking.hostName}</title>
+          <title>${config.networking.hostName}</title>
           <style>
-              @keyframes gradient {
-                  0% { background-position: 0% 50%; }
-                  50% { background-position: 100% 50%; }
-                  100% { background-position: 0% 50%; }
-              }
               body {
                   margin: 0;
+                  background: #050505;
+                  color: #00ff41;
+                  font-family: "Courier New", Courier, monospace;
                   display: flex;
                   justify-content: center;
                   align-items: center;
                   height: 100vh;
-                  background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #000000);
-                  background-size: 400% 400%;
-                  animation: gradient 15s ease infinite;
-                  font-family: "JetBrains Mono", monospace, system-ui;
-                  color: white;
+                  overflow: hidden;
               }
-              .glass-card {
-                  background: rgba(255, 255, 255, 0.03);
-                  backdrop-filter: blur(10px);
-                  -webkit-backdrop-filter: blur(10px);
-                  border: 1px solid rgba(255, 255, 255, 0.1);
-                  border-radius: 20px;
-                  padding: 3rem;
+              /* Scanline effect */
+              body::before {
+                  content: " ";
+                  position: absolute;
+                  top: 0; left: 0; bottom: 0; right: 0;
+                  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                              linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+                  background-size: 100% 2px, 3px 100%;
+                  z-index: 2;
+                  pointer-events: none;
+              }
+              .container {
                   text-align: center;
-                  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+                  border: 2px solid #00ff41;
+                  padding: 4rem;
+                  box-shadow: 0 0 20px #00ff41, inset 0 0 20px #00ff41;
+                  position: relative;
+                  z-index: 1;
               }
               h1 {
-                  font-size: 3rem;
+                  font-size: 3.5rem;
                   margin: 0;
-                  letter-spacing: -2px;
                   text-transform: uppercase;
-                  background: linear-gradient(to right, #fff, #58a6ff);
-                  -webkit-background-clip: text;
-                  -webkit-text-fill-color: transparent;
+                  letter-spacing: 10px;
+                  text-shadow: 0 0 10px #00ff41;
               }
-              .status-line {
-                  margin-top: 1rem;
-                  font-size: 0.9rem;
-                  color: #8b949e;
+              p {
+                  margin-top: 2rem;
+                  font-size: 1.2rem;
                   letter-spacing: 2px;
+                  opacity: 0.8;
               }
-              .pulse {
-                  display: inline-block;
-                  width: 8px;
-                  height: 8px;
-                  background: #00ff88;
-                  border-radius: 50%;
-                  margin-right: 10px;
-                  box-shadow: 0 0 15px #00ff88;
+              .flicker {
+                  animation: pulse 2s infinite;
+              }
+              @keyframes pulse {
+                  0% { opacity: 1; }
+                  50% { opacity: 0.4; }
+                  100% { opacity: 1; }
               }
           </style>
       </head>
       <body>
-          <div class="glass-card">
+          <div class="container">
               <h1>${config.networking.hostName}</h1>
-              <div class="status-line">
-                  <span class="pulse"></span> ENCRYPTED LINK ACTIVE
-              </div>
+              <p class="flicker">System is online and secure</p>
           </div>
       </body>
       </html>
