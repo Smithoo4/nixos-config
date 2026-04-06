@@ -9,9 +9,9 @@
     "${self}/users/smithoo4"
 
     # Services
-    "${self}/modules/caddy"
-    "${self}/modules/caddy/testPage.nix"
-  ];
+    "${self}/modules/reverse-proxy"
+
+    ];
 
   # Set once at install time. Do NOT change after first boot.
   system.stateVersion = "25.11";
