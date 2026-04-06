@@ -13,7 +13,7 @@
           UNIT="$1"
           HOSTNAME="${config.networking.hostName}"
 
-          ${pkgs.msmtp}/bin/msmtp root <<EOF
+          /run/current-system/sw/bin/msmtp root <<EOF
           To: root
           Subject: [NixOS] Service $UNIT failed on $HOSTNAME
 
