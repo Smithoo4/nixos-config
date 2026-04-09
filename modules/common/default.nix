@@ -39,10 +39,6 @@
   # Nix Download Buffer
   nix.settings.download-buffer-size = 268435456; # 256 MB
 
-  # Firewall
-  networking.firewall.enable = true;
-  networking.nftables.enable = true;
-
   # Packages
   environment.systemPackages = with pkgs; [
     git
