@@ -9,85 +9,99 @@
       <html lang="en">
       <head>
           <meta charset="UTF-8">
-          <title>NODE: ${config.networking.hostName}</title>
+          <title>NODE // ${config.networking.hostName}</title>
           <style>
+              :root {
+                  --bg: #0a0a0a;
+                  --text: #f0f0f0;
+                  --accent: #ff3e00;
+              }
               body {
-                  background-color: #1a1a1a;
-                  background-image: radial-gradient(#333 10%, transparent 10%);
-                  background-size: 20px 20px;
-                  color: #00f2ff;
-                  font-family: "Courier New", Courier, monospace;
-                  display: flex;
-                  justify-content: center;
-                  align-items: center;
-                  height: 100vh;
                   margin: 0;
-                  text-transform: uppercase;
+                  background-color: var(--bg);
+                  color: var(--text);
+                  font-family: "Inter", system-ui, -apple-system, sans-serif;
+                  height: 100vh;
+                  display: flex;
+                  overflow: hidden;
+                  letter-spacing: -0.02em;
               }
-              .console {
-                  background: #2b2b2b;
-                  border: 10px solid #444;
-                  border-style: outset;
-                  border-radius: 40px;
-                  padding: 4rem;
-                  box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(0,0,0,0.5);
-                  text-align: center;
+              /* Grain overlay */
+              body::after {
+                  content: "";
+                  position: fixed;
+                  top: 0; left: 0; width: 100%; height: 100%;
+                  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3F%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+                  opacity: 0.05;
+                  pointer-events: none;
+                  z-index: 10;
+              }
+              .background-text {
+                  position: absolute;
+                  font-size: 30vw;
+                  font-weight: 900;
+                  color: rgba(255, 255, 255, 0.02);
+                  white-space: nowrap;
+                  top: 50%;
+                  left: 50%;
+                  transform: translate(-50%, -50%) rotate(-10deg);
+                  user-select: none;
+                  z-index: 1;
+              }
+              .content {
                   position: relative;
+                  z-index: 2;
+                  margin: auto 10%;
+                  width: 100%;
               }
-              /* Oscilloscope screen effect */
-              .screen {
-                  background: #001a1a;
-                  border: 4px solid #111;
-                  padding: 2rem;
-                  border-radius: 10px;
-                  box-shadow: inset 0 0 15px #00f2ff;
+              .line {
+                  width: 60px;
+                  height: 4px;
+                  background: var(--accent);
                   margin-bottom: 2rem;
               }
               h1 {
-                  font-size: 2.5rem;
+                  font-size: clamp(3rem, 10vw, 8rem);
+                  line-height: 0.9;
                   margin: 0;
-                  letter-spacing: 4px;
-                  color: #fff;
-                  text-shadow: 0 0 10px #00f2ff;
+                  font-weight: 800;
+                  text-transform: uppercase;
               }
-              .status-light {
-                  width: 20px;
-                  height: 20px;
-                  background: #ff0000;
-                  border-radius: 50%;
-                  display: inline-block;
-                  margin-right: 15px;
-                  box-shadow: 0 0 10px #ff0000;
-                  animation: blink 0.8s infinite;
-              }
-              .label {
-                  font-size: 0.8rem;
+              .status {
+                  margin-top: 2rem;
+                  display: flex;
+                  align-items: center;
+                  gap: 1rem;
+                  font-family: monospace;
+                  font-size: 1.2rem;
+                  text-transform: uppercase;
                   color: #888;
-                  margin-top: 10px;
-                  display: block;
               }
-              @keyframes blink {
-                  0%, 100% { opacity: 1; filter: brightness(1.5); }
-                  50% { opacity: 0.7; filter: brightness(0.8); }
-              }
-              .secure-msg {
-                  font-weight: bold;
-                  letter-spacing: 2px;
-                  color: #00f2ff;
+              .coord {
+                  position: absolute;
+                  bottom: 40px;
+                  right: 40px;
+                  font-family: monospace;
+                  font-size: 0.8rem;
+                  color: #444;
+                  writing-mode: vertical-rl;
               }
           </style>
       </head>
       <body>
-          <div class="console">
-              <div class="screen">
-                  <span class="label">TRANSISTOR NODE IDENTIFICATION</span>
-                  <h1>${config.networking.hostName}</h1>
-              </div>
-              <div class="secure-msg">
-                  <span class="status-light"></span>
+          <div class="background-text">${config.networking.hostName}</div>
+          
+          <div class="content">
+              <div class="line"></div>
+              <h1>${config.networking.hostName}</h1>
+              <div class="status">
+                  <span style="color: var(--accent)">[ LIVE ]</span>
                   System is online and secure
               </div>
-              <span class="label">VACUUM TUBE ARRAY: OPERATIONAL</span>
+          </div>
+
+          <div class="coord">
+              NETWORK_NODE_ID // ${config.networking.hostName} // 2026
           </div>
       </body>
       </html>
