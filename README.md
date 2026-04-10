@@ -45,7 +45,7 @@ Active Development — currently being refined, expanded, and tested.
     - [X] Enable HTTP/3
     - [X] Hardened proxy connections
     - [X] Strict host matching (Drop unmatched requests)
-- [ ] Set up CrowdSec
+- [ ] Set up CrowdSec — on hold, NixOS module has known issues (nixpkgs#446307)
     - [ ] SSH protection
     - [ ] WebServer protection
 
