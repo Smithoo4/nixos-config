@@ -3,6 +3,8 @@
   services.caddy.virtualHosts."${config.networking.hostName}.duckdns.org" = {
     extraConfig = ''
       import security
+      header Content-Type text/html; charset=utf-8
+
       respond <<HTML
       <!DOCTYPE html>
       <html>
