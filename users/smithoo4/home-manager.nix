@@ -3,6 +3,7 @@
   # User Packages
   home.packages = with pkgs; [
     sops
+    age
     htop
     tree
     wget
