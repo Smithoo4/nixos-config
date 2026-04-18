@@ -1,4 +1,3 @@
-{ ... }:
 {
   disko.devices = {
     disk = {
@@ -10,7 +9,7 @@
           partitions = {
             ESP = {
               type = "EF00";
-              size = "512M";
+              size = "500M";
               content = {
                 type = "filesystem";
                 format = "vfat";
@@ -22,9 +21,12 @@
               size = "100%";
               content = {
                 type = "filesystem";
-                format = "ext4";
+                format = "xfs";
                 mountpoint = "/";
-                mountOptions = [ "defaults" "noatime" ];
+                mountOptions = [
+                  "defaults"
+                  "pquota"
+                ];
               };
             };
           };
