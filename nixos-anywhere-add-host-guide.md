@@ -1,6 +1,6 @@
 # Adding a New Host with nixos-anywhere
 
-A practical guide to adding a new machine to an existing
+A guide to adding a new machine to an existing
 [nixos-config](https://github.com/Smithoo4/nixos-config) flake and deploying
 it remotely using [nixos-anywhere](https://github.com/nix-community/nixos-anywhere).
 
@@ -39,6 +39,11 @@ and `sops` installed.
 required to re-encrypt secrets in Section 6.
 - The source machine can reach the target machine over SSH. How to set this
 up is covered in [Section 1](#1-prepare-the-target-machine).
+- The target machine should have a DHCP reservation (based on its MAC address)
+so that its IP address does not change between boots. Without this, the
+machine may receive a different IP after rebooting into the kexec environment
+or the newly installed system, causing nixos-anywhere to lose its connection
+mid-install.
 - The following placeholders are used throughout this guide. Substitute your
 own values wherever they appear:
 
@@ -122,7 +127,7 @@ source machine, connect with:
 ssh root@<TARGET-IP>
 ```
 
-### 1.2 VPS or cloud instance (already running Linux)
+### 1.2 Already Running Linux (recommended for VPS or cloud instance)
 
 Most providers give you root SSH access by default, or let you inject an SSH
 public key at provisioning time. If the instance is running a generic Linux
@@ -370,25 +375,20 @@ Generate the key on your source machine and stage it in a temporary directory.
 nixos-anywhere will copy this directory tree onto the new system before rebooting.
 
 ```bash
-mkdir -p /tmp/<hostname>-extra/var/lib/sops-nix
-age-keygen -o /tmp/<hostname>-extra/var/lib/sops-nix/key.txt
-chmod 600 /tmp/<hostname>-extra/var/lib/sops-nix/key.txt
+mkdir -p /tmp/extra/var/lib/sops-nix
+age-keygen -o /tmp/extra/var/lib/sops-nix/key.txt
+chmod 600 /tmp/extra/var/lib/sops-nix/key.txt
 ```
 
-Extract and record the public key:
-
-```bash
-PUBKEY=$(age-keygen -y /tmp/<hostname>-extra/var/lib/sops-nix/key.txt)
-echo $PUBKEY
-```
-
-Copy the value printed. You will paste it into `.sops.yaml` in the next step.
+`age-keygen` prints the public key to the terminal when it runs. Copy the
+value shown on the `Public key:` line. You will paste it into `.sops.yaml`
+in the next step.
 
 > **WARNING:**
-> The private key at `/tmp/<hostname>-extra/var/lib/sops-nix/key.txt` is the
+> The private key at `/tmp/extra/var/lib/sops-nix/key.txt` is the
 > only copy. If you lose it before the system boots, the host will be unable to
 > decrypt its secrets and you will need to start this process over. Do not
-> delete `/tmp/<hostname>-extra` until after the install is confirmed working.
+> delete `/tmp/extra` until after the install is confirmed working.
 
 ---
 
@@ -469,7 +469,7 @@ nix run github:nix-community/nixos-anywhere -- \
   --flake github:Smithoo4/nixos-config#<hostname> \
   --generate-hardware-config nixos-generate-config \
     hosts/<hostname>/hardware-configuration.nix \
-  --extra-files /tmp/<hostname>-extra \
+  --extra-files /tmp/extra \
   root@<TARGET-IP>
 ```
 
@@ -481,7 +481,7 @@ into memory via `kexec` and reboots into it. The machine stays reachable
 over SSH throughout.
 3. It evaluates `github:Smithoo4/nixos-config#<hostname>` and runs Disko to
 partition and format the disk as declared in `disko.nix`.
-4. It copies the contents of `/tmp/<hostname>-extra` onto the new system,
+4. It copies the contents of `/tmp/extra` onto the new system,
 placing the age private key at `/var/lib/sops-nix/key.txt` before
 first boot.
 5. `--generate-hardware-config` runs `nixos-generate-config` on the target,
@@ -501,7 +501,7 @@ nix run github:nix-community/nixos-anywhere -- \
   --flake github:Smithoo4/nixos-config#<hostname> \
   --generate-hardware-config nixos-generate-config \
     hosts/<hostname>/hardware-configuration.nix \
-  --extra-files /tmp/<hostname>-extra \
+  --extra-files /tmp/extra \
   --sudo \
   <user>@<TARGET-IP>
 ```
@@ -552,6 +552,12 @@ sudo ls /run/secrets/
 You should see the secrets listed in your configuration (e.g.
 `smithoo4-password`, `smithoo4-ssh-key`).
 
+When you are done, exit back to your source machine before continuing:
+
+```bash
+exit
+```
+
 ### 9.3 Commit the generated hardware configuration
 
 nixos-anywhere wrote the real `hardware-configuration.nix` back to your source
@@ -571,18 +577,36 @@ git push
 
 ### 9.4 Clean up the temporary age key
 
-The private key in `/tmp/<hostname>-extra` is no longer needed. It was copied
+The private key in `/tmp/extra` is no longer needed. It was copied
 onto the target during the nixos-anywhere run. Delete it from your source
 machine:
 
 ```bash
-rm -rf /tmp/<hostname>-extra
+rm -rf /tmp/extra
 ```
 
 > **WARNING:**
 > The canonical copy of the host's private key now lives only on the target at
 > `/var/lib/sops-nix/key.txt`. If you ever wipe the target, you will need to
 > repeat Section 5 and Section 6 to generate a new key and re-encrypt secrets.
+
+### 9.5 Verify the auto-upgrade configuration
+
+SSH back into the new host and run a rebuild manually to confirm the host can
+pull and apply its configuration from GitHub:
+
+```bash
+ssh smithoo4@<TARGET-IP>
+```
+
+```bash
+sudo nixos-rebuild switch --flake github:Smithoo4/nixos-config#<hostname> --refresh
+```
+
+The `--refresh` flag forces Nix to check GitHub for the latest version of the
+flake rather than using a cached copy. If the rebuild completes successfully,
+the auto-upgrade module is wired up correctly and the host will keep itself up
+to date on its own schedule.
 
 ---
 
@@ -600,4 +624,4 @@ rm -rf /tmp/<hostname>-extra
 
 ---
 
-**Version:** 1.2 | **Last Updated:** April 2026
+**Version:** 1.3 | **Last Updated:** April 2026
