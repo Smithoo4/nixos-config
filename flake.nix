@@ -33,6 +33,7 @@
           ./hosts/${hostname}
           ./modules/common
           ./users/smithoo4
+        ];
       };
   in {
     nixosConfigurations = {
