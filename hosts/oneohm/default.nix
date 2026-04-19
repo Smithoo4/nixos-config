@@ -14,7 +14,7 @@
     # Users
 
     # Services
-    "${self}/modules/reverse-proxy"
+    "${self}/modules/reverse-proxy-caddy"
 
     ];
 
