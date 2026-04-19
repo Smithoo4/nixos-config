@@ -13,10 +13,6 @@
     recommendedBrotliSettings = true;
 
     clientMaxBodySize = "100m";
-
-    commonHttpConfig = ''
-      server_tokens off;
-    '';
   };
 
   # Catch-all: drop unmatched HTTP
