@@ -34,3 +34,10 @@
   # Root mail alias
   environment.etc."aliases".source = config.sops.templates."aliases".path;
 }
+
+
+# NOTE: Rogers/Shaw SMTP in Canada is in flux and may be deprecated.
+# Using it for now, but plan to move to:
+#   - Gmail/Outlook with app password, or
+#   - Transactional service (SendGrid, SMTP2GO, Brevo, etc.)
+# Limitation: no owned domain, only free dynamic DNS.

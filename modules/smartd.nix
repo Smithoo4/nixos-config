@@ -1,3 +1,4 @@
+# Currently not in use — I only have VMs and Pi SD cards running on servers, but keeping it for future bare-metal development
 { ... }:
 {
   # S.M.A.R.T disk monitoring

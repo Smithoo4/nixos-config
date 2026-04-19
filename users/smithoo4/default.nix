@@ -19,6 +19,7 @@
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGcNh5n0Fc/bJ9SaYSMyrw4EoJ98Of7iGJDIJ6K+Csb+ 13087392+Smithoo4@users.noreply.github.com"
     ];
   };
+  services.openssh.settings.AllowUsers = [ "smithoo4" ];
 
   # Home-manager
   home-manager.users.smithoo4 = import ./home-manager.nix;
