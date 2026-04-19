@@ -14,6 +14,7 @@
     # Users
 
     # Services
+    "${self}/modules/reverse-proxy-nginx"
 
   ];
 
