@@ -820,7 +820,7 @@ HTML 200
     defaults = {
       email = "smith_oo4@shaw.ca";
       # Staging for testing — comment out for production
-      server = "https://acme-staging-v02.api.letsencrypt.org/directory";
+      #server = "https://acme-staging-v02.api.letsencrypt.org/directory";
       dnsProvider = "duckdns";
       environmentFile = config.sops.templates."acme-duckdns-env".path;
     };
@@ -843,10 +843,6 @@ HTML 200
     recommendedBrotliSettings = true;
 
     clientMaxBodySize = "100m";
-
-    commonHttpConfig = ''
-      server_tokens off;
-    '';
   };
 
   # Catch-all: drop unmatched HTTP
