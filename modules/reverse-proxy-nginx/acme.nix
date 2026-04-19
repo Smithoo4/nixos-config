@@ -15,7 +15,7 @@
     defaults = {
       email = "smith_oo4@shaw.ca";
       # Staging for testing — comment out for production
-      server = "https://acme-staging-v02.api.letsencrypt.org/directory";
+      #server = "https://acme-staging-v02.api.letsencrypt.org/directory";
       dnsProvider = "duckdns";
       environmentFile = config.sops.templates."acme-duckdns-env".path;
     };
