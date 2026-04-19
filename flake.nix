@@ -30,9 +30,9 @@
           inputs.disko.nixosModules.disko
           inputs.sops-nix.nixosModules.sops
           inputs.home-manager.nixosModules.home-manager
-          ./modules/common
           ./hosts/${hostname}
-        ];
+          ./modules/common
+          ./users/smithoo4
       };
   in {
     nixosConfigurations = {
@@ -47,7 +47,6 @@
         hostname = "fourohm";
         timezone = "America/Edmonton";
       };
-
 
       # twoohm = mkHost {
       #   system = "aarch64-linux";

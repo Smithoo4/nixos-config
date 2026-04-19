@@ -6,7 +6,6 @@
     ./disko.nix
 
     # Users
-    "${self}/users/smithoo4"
 
     # Services
     "${self}/modules/reverse-proxy"

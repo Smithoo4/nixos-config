@@ -6,7 +6,8 @@
     ./disko.nix
 
     # Users
-    "${self}/users/smithoo4"
+
+    # Services
 
   ];
 
