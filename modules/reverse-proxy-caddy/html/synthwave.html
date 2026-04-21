@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{HOSTNAME}}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(180deg, #0d0221 0%, #150535 30%, #1a0a3e 50%, #3b1578 70%, #ff6c11 95%, #ff9248 100%);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: "Courier New", monospace;
+        }
+        .sun {
+            position: absolute;
+            bottom: 28%;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: linear-gradient(180deg, #ff6c11 0%, #ff2a6d 50%, #d900ff 100%);
+            box-shadow: 0 0 60px #ff6c11, 0 0 120px #ff2a6d;
+        }
+        .grid-container {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 35%;
+            overflow: hidden;
+            perspective: 300px;
+        }
+        .grid {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            left: -50%;
+            bottom: 0;
+            background-image:
+                linear-gradient(0deg, transparent 0%, transparent 48%, #ff00ff44 49%, #ff00ff44 51%, transparent 52%, transparent 100%),
+                linear-gradient(90deg, transparent 0%, transparent 48%, #ff00ff44 49%, #ff00ff44 51%, transparent 52%, transparent 100%);
+            background-size: 60px 40px;
+            transform: rotateX(60deg);
+            transform-origin: bottom;
+            animation: scroll 2s linear infinite;
+        }
+        @keyframes scroll { 0% { transform: rotateX(60deg) translateY(0); } 100% { transform: rotateX(60deg) translateY(40px); } }
+        .content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            margin-bottom: 10vh;
+        }
+        h1 {
+            font-size: clamp(3rem, 8vw, 6rem);
+            text-transform: uppercase;
+            letter-spacing: 12px;
+            background: linear-gradient(180deg, #ff79c6, #00ffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 20px #ff79c6);
+        }
+        p {
+            color: #00ffff;
+            font-size: 1.2rem;
+            letter-spacing: 4px;
+            margin-top: 1rem;
+            text-shadow: 0 0 10px #00ffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="sun"></div>
+    <div class="content">
+        <h1>{{HOSTNAME}}</h1>
+        <p>System is online and secure</p>
+    </div>
+    <div class="grid-container">
+        <div class="grid"></div>
+    </div>
+</body>
+</html>

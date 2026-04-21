@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{HOSTNAME}}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; height: 100vh; }
+
+        /* GeoCities theme */
+        body[data-theme="geocities"] {
+            background-color: #000080;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"><rect width="1" height="1" fill="white" fill-opacity="0.3"/></svg>');
+            color: #ffff00;
+            font-family: "Comic Sans MS", "Comic Sans", cursive, sans-serif;
+            padding: 20px;
+            text-align: center;
+            overflow: auto;
+        }
+        .geo-table {
+            border: 5px outset #808080;
+            background-color: #c0c0c0;
+            color: #000;
+            margin: 20px auto;
+            padding: 10px;
+            width: 80%;
+            max-width: 600px;
+        }
+        .blink {
+            animation: blinker 1s linear infinite;
+            color: #ff0000;
+            font-weight: bold;
+        }
+        @keyframes blinker { 50% { opacity: 0; } }
+        body[data-theme="geocities"] marquee {
+            background-color: #00ff00;
+            color: #000;
+            font-weight: bold;
+            padding: 5px;
+            border: 2px inset #fff;
+        }
+        .geo-counter {
+            background: #000;
+            color: #00ff00;
+            font-family: "Courier New", monospace;
+            padding: 5px 10px;
+            border: 2px inset silver;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        body[data-theme="geocities"] h1 {
+            font-size: 2.5rem;
+            text-shadow: 3px 3px #ff00ff;
+        }
+        .geo-construction {
+            border: 3px dashed yellow;
+            padding: 10px;
+            margin: 10px;
+            display: inline-block;
+        }
+
+        /* Synthwave theme */
+        body[data-theme="synthwave"] {
+            background: linear-gradient(180deg, #0d0221 0%, #150535 30%, #1a0a3e 50%, #3b1578 70%, #ff6c11 95%, #ff9248 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: "Courier New", monospace;
+        }
+        .synth-sun {
+            position: absolute;
+            bottom: 28%;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: linear-gradient(180deg, #ff6c11 0%, #ff2a6d 50%, #d900ff 100%);
+            box-shadow: 0 0 60px #ff6c11, 0 0 120px #ff2a6d;
+        }
+        .synth-grid-container {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 35%;
+            overflow: hidden;
+            perspective: 300px;
+        }
+        .synth-grid {
+            position: absolute;
+            width: 200%; height: 200%;
+            left: -50%; bottom: 0;
+            background-image:
+                linear-gradient(0deg, transparent 0%, transparent 48%, #ff00ff44 49%, #ff00ff44 51%, transparent 52%, transparent 100%),
+                linear-gradient(90deg, transparent 0%, transparent 48%, #ff00ff44 49%, #ff00ff44 51%, transparent 52%, transparent 100%);
+            background-size: 60px 40px;
+            transform: rotateX(60deg);
+            transform-origin: bottom;
+            animation: synth-scroll 2s linear infinite;
+        }
+        @keyframes synth-scroll { 0%{transform:rotateX(60deg) translateY(0)} 100%{transform:rotateX(60deg) translateY(40px)} }
+        .synth-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            margin-bottom: 10vh;
+        }
+        .synth-content h1 {
+            font-size: clamp(3rem, 8vw, 6rem);
+            text-transform: uppercase;
+            letter-spacing: 12px;
+            background: linear-gradient(180deg, #ff79c6, #00ffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 20px #ff79c6);
+        }
+        .synth-content p {
+            color: #00ffff;
+            font-size: 1.2rem;
+            letter-spacing: 4px;
+            margin-top: 1rem;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        /* Boot sequence theme */
+        body[data-theme="bootsequence"] {
+            padding: 2rem;
+            background: #000;
+            color: #aaa;
+            font-family: "Courier New", monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            display: block;
+        }
+        .boot-line {
+            opacity: 0;
+            animation: boot-appear 0.05s forwards;
+            white-space: pre;
+        }
+        @keyframes boot-appear { to { opacity: 1; } }
+        .boot-ok { color: #00ff41; }
+        .boot-host { color: #00bfff; }
+        .boot-cursor {
+            display: inline-block;
+            width: 8px; height: 14px;
+            background: #aaa;
+            animation: boot-blink 1s step-end infinite;
+            vertical-align: middle;
+            margin-left: 2px;
+        }
+        @keyframes boot-blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+    <!-- GeoCities theme -->
+    <div id="theme-geocities" style="display:none">
+        <h1>*** {{HOSTNAME}} ***</h1>
+        <div class="geo-construction">
+            <span class="blink">NEW!</span>
+            <marquee scrollamount="10">System is online and secure --- System is online and secure</marquee>
+        </div>
+        <table class="geo-table">
+            <tr>
+                <td>
+                    <p>Welcome to my server! You have reached the digital home of <b>{{HOSTNAME}}</b>.</p>
+                    <hr>
+                    <p>STATUS: <span style="color: blue; text-decoration: underline;">OPERATIONAL</span></p>
+                    <p>This site is best viewed in Netscape Navigator 4.0 at 800x600 resolution!</p>
+                </td>
+            </tr>
+        </table>
+        <p>Visitor Number:</p>
+        <div class="geo-counter">000042</div>
+        <p><br>Last Updated: April 2026</p>
+    </div>
+
+    <!-- Synthwave theme -->
+    <div id="theme-synthwave" style="display:none">
+        <div class="synth-sun"></div>
+        <div class="synth-content">
+            <h1>{{HOSTNAME}}</h1>
+            <p>System is online and secure</p>
+        </div>
+        <div class="synth-grid-container">
+            <div class="synth-grid"></div>
+        </div>
+    </div>
+
+    <!-- Boot sequence theme -->
+    <div id="theme-bootsequence" style="display:none">
+        <div class="boot-line" style="animation-delay:0.2s">NixOS/GNU Boot System v25.11</div>
+        <div class="boot-line" style="animation-delay:0.4s">Copyright (c) 2026 NixOS Contributors</div>
+        <div class="boot-line" style="animation-delay:0.6s">&nbsp;</div>
+        <div class="boot-line" style="animation-delay:0.9s">Hostname ............... <span class="boot-host">{{HOSTNAME}}</span></div>
+        <div class="boot-line" style="animation-delay:1.3s">Hardware check ......... <span class="boot-ok">[  OK  ]</span></div>
+        <div class="boot-line" style="animation-delay:1.7s">Loading kernel modules . <span class="boot-ok">[  OK  ]</span></div>
+        <div class="boot-line" style="animation-delay:2.1s">Mounting filesystems ... <span class="boot-ok">[  OK  ]</span></div>
+        <div class="boot-line" style="animation-delay:2.5s">Starting sops-nix ...... <span class="boot-ok">[  OK  ]</span></div>
+        <div class="boot-line" style="animation-delay:2.9s">Decrypting secrets ..... <span class="boot-ok">[  OK  ]</span></div>
+        <div class="boot-line" style="animation-delay:3.3s">Starting OpenSSH ....... <span class="boot-ok">[  OK  ]</span></div>
+        <div class="boot-line" style="animation-delay:3.7s">Starting Caddy ......... <span class="boot-ok">[  OK  ]</span></div>
+        <div class="boot-line" style="animation-delay:4.1s">ACME certificate ....... <span class="boot-ok">[  OK  ]</span></div>
+        <div class="boot-line" style="animation-delay:4.5s">Firewall (nftables) .... <span class="boot-ok">[  OK  ]</span></div>
+        <div class="boot-line" style="animation-delay:4.9s">&nbsp;</div>
+        <div class="boot-line" style="animation-delay:5.3s"><span class="boot-ok">All services operational.</span></div>
+        <div class="boot-line" style="animation-delay:5.7s">&nbsp;</div>
+        <div class="boot-line" style="animation-delay:6.1s"><span class="boot-host">{{HOSTNAME}}</span> login: <span class="boot-cursor"></span></div>
+    </div>
+
+    <script>
+        const themes = ["geocities", "synthwave", "bootsequence"];
+        const pick = themes[Math.floor(Math.random() * themes.length)];
+
+        document.body.setAttribute("data-theme", pick);
+        document.getElementById("theme-" + pick).style.display = "";
+    </script>
+</body>
+</html>
