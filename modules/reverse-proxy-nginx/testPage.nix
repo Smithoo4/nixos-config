@@ -7,6 +7,7 @@ in
   services.nginx.virtualHosts.${domain} = {
     forceSSL = true;
     enableACME = true;
+    acmeRoot = null;
     http3 = true;
     quic = true;
 
