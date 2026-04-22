@@ -498,296 +498,61 @@ in
 {
   imports = [
      ./caddy.nix
-     ./testPage1.nix # Change to testPage1.nix, testPage2.nix, or testPage3.nix depending on mood
+     ./testPage.nix
   ];
 }
 
---- ./modules/reverse-proxy-caddy/testPage1.nix ---
-{ config, ... }:
+--- ./modules/reverse-proxy-caddy/testPage.nix ---
+{ config, pkgs, ... }:
+
+let
+  domain = "${config.networking.hostName}.duckdns.org";
+
+  # Default: random theme on each page load
+  # Pin a specific theme by changing this to:
+  #   ./html/geocities.html
+  #   ./html/synthwave.html
+  #   ./html/bootsequence.html
+  testPageFile = ./html/random.html;
+
+  webroot = pkgs.runCommand "caddy-test-page" {} ''
+    mkdir -p $out
+    substitute ${testPageFile} $out/index.html \
+      --replace-fail "{{HOSTNAME}}" "${config.networking.hostName}"
+  '';
+in
 {
-  services.caddy.virtualHosts."${config.networking.hostName}.duckdns.org" = {
+  services.caddy.virtualHosts.${domain} = {
     extraConfig = ''
       import security
-      header Content-Type text/html
-      respond <<HTML
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-          <meta charset="UTF-8">
-          <title>Welcome to ${config.networking.hostName}'s Home Page!</title>
-          <style>
-              body {
-                  background-color: #000080;
-                  background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
-                  color: #ffff00;
-                  font-family: "Comic Sans MS", "Comic Sans", cursive, sans-serif;
-                  margin: 0;
-                  padding: 20px;
-                  text-align: center;
-              }
-              table {
-                  border: 5px outset #808080;
-                  background-color: #c0c0c0;
-                  color: #000;
-                  margin: 20px auto;
-                  padding: 10px;
-                  width: 80%;
-                  max-width: 600px;
-              }
-              .blink {
-                  animation: blinker 1s linear infinite;
-                  color: #ff0000;
-                  font-weight: bold;
-              }
-              @keyframes blinker {
-                  50% { opacity: 0; }
-              }
-              marquee {
-                  background-color: #00ff00;
-                  color: #000;
-                  font-weight: bold;
-                  padding: 5px;
-                  border: 2px inset #fff;
-              }
-              .counter {
-                  background: #000;
-                  color: #00ff00;
-                  font-family: "Courier New", monospace;
-                  padding: 5px 10px;
-                  border: 2px silver gray;
-                  display: inline-block;
-                  margin-top: 10px;
-              }
-              h1 {
-                  font-size: 2.5rem;
-                  text-shadow: 3px 3px #ff00ff;
-              }
-              .under-construction {
-                  border: 3px yellow dashed;
-                  padding: 10px;
-                  margin: 10px;
-                  display: inline-block;
-              }
-          </style>
-      </head>
-      <body>
-          <h1>*** ${config.networking.hostName} ***</h1>
-
-          <div class="under-construction">
-              <span class="blink">NEW!</span>
-              <marquee scrollamount="10">System is online and secure --- System is online and secure</marquee>
-          </div>
-
-          <table>
-              <tr>
-                  <td>
-                      <p>Welcome to my server! You have reached the digital home of <b>${config.networking.hostName}</b>.</p>
-                      <hr>
-                      <p>STATUS: <span style="color: blue; text-decoration: underline;">OPERATIONAL</span></p>
-                      <p>This site is best viewed in Netscape Navigator 4.0 at 800x600 resolution!</p>
-                  </td>
-              </tr>
-          </table>
-
-          <p>Visitor Number:</p>
-          <div class="counter">000042</div>
-
-          <p><br>Last Updated: April 9, 2026</p>
-      </body>
-      </html>
-HTML 200
+      root * ${webroot}
+      file_server
     '';
   };
 }
 
---- ./modules/reverse-proxy-caddy/testPage2.nix ---
+--- ./modules/reverse-proxy-caddy/example-virtualhost.nix ---
+# ┌─────────────────────────────────────────────────────────────────┐
+# │  REFERENCE ONLY — This file is NOT imported in default.nix.    │
+# │  Copy and adapt for new services.                              │
+# └─────────────────────────────────────────────────────────────────┘
+#
+# To use:
+#   1. Copy this file or use it as a template for your service module
+#   2. Import the new file in the appropriate host's default.nix
+#   3. Create a DuckDNS DNS record for the new subdomain
+#   4. Rebuild: sudo nixos-rebuild switch --flake .#<hostname>
+
 { config, ... }:
+
+let
+  domain = "blog.${config.networking.hostName}.duckdns.org";
+in
 {
-  services.caddy.virtualHosts."${config.networking.hostName}.duckdns.org" = {
+  services.caddy.virtualHosts.${domain} = {
     extraConfig = ''
       import security
-      header Content-Type text/html
-      respond <<HTML
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-          <meta charset="UTF-8">
-          <title>NODE // ${config.networking.hostName}</title>
-          <style>
-              :root {
-                  --bg: #0a0a0a;
-                  --text: #f0f0f0;
-                  --accent: #ff3e00;
-              }
-              body {
-                  margin: 0;
-                  background-color: var(--bg);
-                  color: var(--text);
-                  font-family: "Inter", system-ui, -apple-system, sans-serif;
-                  height: 100vh;
-                  display: flex;
-                  overflow: hidden;
-                  letter-spacing: -0.02em;
-              }
-              /* Grain overlay */
-              body::after {
-                  content: "";
-                  position: fixed;
-                  top: 0; left: 0; width: 100%; height: 100%;
-                  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3F%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-                  opacity: 0.05;
-                  pointer-events: none;
-                  z-index: 10;
-              }
-              .background-text {
-                  position: absolute;
-                  font-size: 30vw;
-                  font-weight: 900;
-                  color: rgba(255, 255, 255, 0.02);
-                  white-space: nowrap;
-                  top: 50%;
-                  left: 50%;
-                  transform: translate(-50%, -50%) rotate(-10deg);
-                  user-select: none;
-                  z-index: 1;
-              }
-              .content {
-                  position: relative;
-                  z-index: 2;
-                  margin: auto 10%;
-                  width: 100%;
-              }
-              .line {
-                  width: 60px;
-                  height: 4px;
-                  background: var(--accent);
-                  margin-bottom: 2rem;
-              }
-              h1 {
-                  font-size: clamp(3rem, 10vw, 8rem);
-                  line-height: 0.9;
-                  margin: 0;
-                  font-weight: 800;
-                  text-transform: uppercase;
-              }
-              .status {
-                  margin-top: 2rem;
-                  display: flex;
-                  align-items: center;
-                  gap: 1rem;
-                  font-family: monospace;
-                  font-size: 1.2rem;
-                  text-transform: uppercase;
-                  color: #888;
-              }
-              .coord {
-                  position: absolute;
-                  bottom: 40px;
-                  right: 40px;
-                  font-family: monospace;
-                  font-size: 0.8rem;
-                  color: #444;
-                  writing-mode: vertical-rl;
-              }
-          </style>
-      </head>
-      <body>
-          <div class="background-text">${config.networking.hostName}</div>
-          
-          <div class="content">
-              <div class="line"></div>
-              <h1>${config.networking.hostName}</h1>
-              <div class="status">
-                  <span style="color: var(--accent)">[ LIVE ]</span>
-                  System is online and secure
-              </div>
-          </div>
-
-          <div class="coord">
-              NETWORK_NODE_ID // ${config.networking.hostName} // 2026
-          </div>
-      </body>
-      </html>
-HTML 200
-    '';
-  };
-}
-
---- ./modules/reverse-proxy-caddy/testPage3.nix ---
-{ config, ... }:
-{
-  services.caddy.virtualHosts."${config.networking.hostName}.duckdns.org" = {
-    extraConfig = ''
-      import security
-      header Content-Type text/html
-      respond <<HTML
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-          <meta charset="UTF-8">
-          <title>${config.networking.hostName}</title>
-          <style>
-              body {
-                  margin: 0;
-                  background: #050505;
-                  color: #00ff41;
-                  font-family: "Courier New", Courier, monospace;
-                  display: flex;
-                  justify-content: center;
-                  align-items: center;
-                  height: 100vh;
-                  overflow: hidden;
-              }
-              /* Scanline effect */
-              body::before {
-                  content: " ";
-                  position: absolute;
-                  top: 0; left: 0; bottom: 0; right: 0;
-                  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-                              linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-                  background-size: 100% 2px, 3px 100%;
-                  z-index: 2;
-                  pointer-events: none;
-              }
-              .container {
-                  text-align: center;
-                  border: 2px solid #00ff41;
-                  padding: 4rem;
-                  box-shadow: 0 0 20px #00ff41, inset 0 0 20px #00ff41;
-                  position: relative;
-                  z-index: 1;
-              }
-              h1 {
-                  font-size: 3.5rem;
-                  margin: 0;
-                  text-transform: uppercase;
-                  letter-spacing: 10px;
-                  text-shadow: 0 0 10px #00ff41;
-              }
-              p {
-                  margin-top: 2rem;
-                  font-size: 1.2rem;
-                  letter-spacing: 2px;
-                  opacity: 0.8;
-              }
-              .flicker {
-                  animation: pulse 2s infinite;
-              }
-              @keyframes pulse {
-                  0% { opacity: 1; }
-                  50% { opacity: 0.4; }
-                  100% { opacity: 1; }
-              }
-          </style>
-      </head>
-      <body>
-          <div class="container">
-              <h1>${config.networking.hostName}</h1>
-              <p class="flicker">System is online and secure</p>
-          </div>
-      </body>
-      </html>
-HTML 200
+      reverse_proxy localhost:8080
     '';
   };
 }
@@ -862,15 +627,29 @@ HTML 200
 }
 
 --- ./modules/reverse-proxy-nginx/testPage.nix ---
-{ config, ... }:
+{ config, pkgs, ... }:
 
 let
   domain = "${config.networking.hostName}.duckdns.org";
+
+  # Default: random theme on each page load
+  # Pin a specific theme by changing this to:
+  #   ./html/terminal.html
+  #   ./html/matrix.html
+  #   ./html/blueprint.html
+  testPageFile = ./html/random.html;
+
+  webroot = pkgs.runCommand "nginx-test-page" {} ''
+    mkdir -p $out
+    substitute ${testPageFile} $out/index.html \
+      --replace-fail "{{HOSTNAME}}" "${config.networking.hostName}"
+  '';
 in
 {
   services.nginx.virtualHosts.${domain} = {
     forceSSL = true;
     enableACME = true;
+    acmeRoot = null;
     http3 = true;
     quic = true;
 
@@ -879,42 +658,49 @@ in
     '';
 
     locations."/" = {
-      extraConfig = ''
-        default_type text/html;
-        return 200 '<!DOCTYPE html>
-          <html lang="en">
-          <head>
-              <meta charset="UTF-8">
-              <title>${config.networking.hostName}</title>
-              <style>
-                  body { margin:0; background:#050505; color:#00ff41;
-                         font-family:"Courier New",Courier,monospace;
-                         display:flex; justify-content:center; align-items:center;
-                         height:100vh; overflow:hidden; }
-                  body::before { content:" "; position:absolute;
-                         top:0;left:0;bottom:0;right:0;
-                         background:linear-gradient(rgba(18,16,16,0) 50%,rgba(0,0,0,.25) 50%),
-                                    linear-gradient(90deg,rgba(255,0,0,.06),rgba(0,255,0,.02),rgba(0,0,255,.06));
-                         background-size:100% 2px,3px 100%; z-index:2; pointer-events:none; }
-                  .container { text-align:center; border:2px solid #00ff41; padding:4rem;
-                         box-shadow:0 0 20px #00ff41,inset 0 0 20px #00ff41;
-                         position:relative; z-index:1; }
-                  h1 { font-size:3.5rem; margin:0; text-transform:uppercase;
-                         letter-spacing:10px; text-shadow:0 0 10px #00ff41; }
-                  p  { margin-top:2rem; font-size:1.2rem; letter-spacing:2px; opacity:.8; }
-                  .flicker { animation:pulse 2s infinite; }
-                  @keyframes pulse { 0%{opacity:1} 50%{opacity:.4} 100%{opacity:1} }
-              </style>
-          </head>
-          <body>
-              <div class="container">
-                  <h1>${config.networking.hostName}</h1>
-                  <p class="flicker">System is online and secure</p>
-              </div>
-          </body>
-          </html>';
-      '';
+      root = webroot;
+      index = "index.html";
     };
+  };
+}
+
+--- ./modules/reverse-proxy-nginx/example-virtualhost.nix ---
+# ┌─────────────────────────────────────────────────────────────────┐
+# │  REFERENCE ONLY — This file is NOT imported in default.nix.    │
+# │  Copy and adapt for new services.                              │
+# └─────────────────────────────────────────────────────────────────┘
+#
+# To use:
+#   1. Copy this file or use it as a template for your service module
+#   2. Import the new file in the appropriate host's default.nix
+#   3. Create a DuckDNS DNS record for the new subdomain
+#   4. Rebuild: sudo nixos-rebuild switch --flake .#<hostname>
+
+{ config, ... }:
+
+let
+  domain = "blog.${config.networking.hostName}.duckdns.org";
+in
+{
+  services.nginx.virtualHosts.${domain} = {
+    forceSSL = true;
+    enableACME = true;
+    acmeRoot = null;
+    http3 = true;
+    quic = true;
+
+    extraConfig = ''
+      add_header Alt-Svc 'h3=":443"; ma=86400' always;
+    '';
+
+    locations."/" = {
+      proxyPass = "http://127.0.0.1:8080";
+    };
+
+    # Override clientMaxBodySize for file-heavy services
+    # locations."/upload".extraConfig = ''
+    #   client_max_body_size 2g;
+    # '';
   };
 }
 
