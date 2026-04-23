@@ -3,11 +3,6 @@
 let
   domain = "${config.networking.hostName}.duckdns.org";
 
-  # Default: random theme on each page load
-  # Pin a specific theme by changing this to:
-  #   ./html/terminal.html
-  #   ./html/matrix.html
-  #   ./html/blueprint.html
   testPageFile = ./html/random.html;
 
   webroot = pkgs.runCommand "nginx-test-page" {} ''
