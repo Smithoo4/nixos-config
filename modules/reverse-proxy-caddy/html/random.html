@@ -1,226 +1,218 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>{{HOSTNAME}}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { width: 100vw; height: 100vh; overflow: hidden; }
+    <meta charset="UTF-8">
+    <title>{{HOSTNAME}}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; height: 100vh; }
 
-    /* ===== Shared ===== */
-    .center {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      text-align: center;
-    }
+        /* GeoCities theme */
+        body[data-theme="geocities"] {
+            background-color: #000080;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"><rect width="1" height="1" fill="white" fill-opacity="0.3"/></svg>');
+            color: #ffff00;
+            font-family: "Comic Sans MS", "Comic Sans", cursive, sans-serif;
+            padding: 20px;
+            text-align: center;
+            overflow: auto;
+        }
+        .geo-table {
+            border: 5px outset #808080;
+            background-color: #c0c0c0;
+            color: #000;
+            margin: 20px auto;
+            padding: 10px;
+            width: 80%;
+            max-width: 600px;
+        }
+        .blink {
+            animation: blinker 1s linear infinite;
+            color: #ff0000;
+            font-weight: bold;
+        }
+        @keyframes blinker { 50% { opacity: 0; } }
+        body[data-theme="geocities"] marquee {
+            background-color: #00ff00;
+            color: #000;
+            font-weight: bold;
+            padding: 5px;
+            border: 2px inset #fff;
+        }
+        .geo-counter {
+            background: #000;
+            color: #00ff00;
+            font-family: "Courier New", monospace;
+            padding: 5px 10px;
+            border: 2px inset silver;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        body[data-theme="geocities"] h1 {
+            font-size: 2.5rem;
+            text-shadow: 3px 3px #ff00ff;
+        }
+        .geo-construction {
+            border: 3px dashed yellow;
+            padding: 10px;
+            margin: 10px;
+            display: inline-block;
+        }
 
-    /* ===== 1. Terminal ===== */
-    body[data-theme="terminal"] {
-      background: #050505;
-      color: #00ff41;
-      font-family: "Courier New", monospace;
-    }
-    body[data-theme="terminal"]::before {
-      content: "";
-      position: fixed; inset: 0;
-      background:
-        linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,.25) 50%),
-        linear-gradient(90deg, rgba(255,0,0,.06), rgba(0,255,0,.02), rgba(0,0,255,.06));
-      background-size: 100% 2px, 3px 100%;
-      pointer-events: none;
-    }
-    .terminal-box {
-      border: 2px solid #00ff41;
-      padding: 4rem;
-      box-shadow: 0 0 20px #00ff41, inset 0 0 20px #00ff41;
-    }
+        /* Synthwave theme */
+        body[data-theme="synthwave"] {
+            background: linear-gradient(180deg, #0d0221 0%, #150535 30%, #1a0a3e 50%, #3b1578 70%, #ff6c11 95%, #ff9248 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: "Courier New", monospace;
+        }
+        .synth-sun {
+            position: absolute;
+            bottom: 28%;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: linear-gradient(180deg, #ff6c11 0%, #ff2a6d 50%, #d900ff 100%);
+            box-shadow: 0 0 60px #ff6c11, 0 0 120px #ff2a6d;
+        }
+        .synth-grid-container {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 35%;
+            overflow: hidden;
+            perspective: 300px;
+        }
+        .synth-grid {
+            position: absolute;
+            width: 200%; height: 200%;
+            left: -50%; bottom: 0;
+            background-image:
+                linear-gradient(0deg, transparent 0%, transparent 48%, #ff00ff44 49%, #ff00ff44 51%, transparent 52%, transparent 100%),
+                linear-gradient(90deg, transparent 0%, transparent 48%, #ff00ff44 49%, #ff00ff44 51%, transparent 52%, transparent 100%);
+            background-size: 60px 40px;
+            transform: rotateX(60deg);
+            transform-origin: bottom;
+            animation: synth-scroll 2s linear infinite;
+        }
+        @keyframes synth-scroll { 0%{transform:rotateX(60deg) translateY(0)} 100%{transform:rotateX(60deg) translateY(40px)} }
+        .synth-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            margin-bottom: 10vh;
+        }
+        .synth-content h1 {
+            font-size: clamp(3rem, 8vw, 6rem);
+            text-transform: uppercase;
+            letter-spacing: 12px;
+            background: linear-gradient(180deg, #ff79c6, #00ffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 20px #ff79c6);
+        }
+        .synth-content p {
+            color: #00ffff;
+            font-size: 1.2rem;
+            letter-spacing: 4px;
+            margin-top: 1rem;
+            text-shadow: 0 0 10px #00ffff;
+        }
 
-    /* ===== 2. Matrix ===== */
-    body[data-theme="matrix"] { background: #000; }
-    #matrixCanvas { position: fixed; inset: 0; }
-    .matrix-overlay { position: fixed; inset: 0; }
-
-    /* ===== 3. Blueprint ===== */
-    body[data-theme="blueprint"] {
-      background-color: #0a1628;
-      background-image:
-        linear-gradient(rgba(65,135,235,0.15) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(65,135,235,0.15) 1px, transparent 1px),
-        linear-gradient(rgba(65,135,235,0.08) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(65,135,235,0.08) 1px, transparent 1px);
-      background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
-      color: #4187eb;
-      font-family: "Courier New", monospace;
-    }
-
-    /* ===== 4. GeoCities ===== */
-    body[data-theme="geocities"] {
-      background: #000080;
-      color: #ffff00;
-      font-family: "Comic Sans MS", cursive;
-      overflow-y: auto;
-    }
-
-    /* ===== 5. Stranger Things ===== */
-    body[data-theme="stranger"] {
-      background: radial-gradient(circle, #300 0%, #000 70%);
-      color: #ff3333;
-      font-family: "Arial Black", sans-serif;
-      letter-spacing: 3px;
-      text-shadow: 0 0 15px red;
-    }
-
-    /* ===== 6. Windows NT / IIS ===== */
-    body[data-theme="windowsnt"] {
-      background: #004e98;
-      color: #ffffff;
-      font-family: Tahoma, Verdana, sans-serif;
-    }
-
-    /* ===== 7. UNIX Login ===== */
-    body[data-theme="unix"] {
-      background: #000;
-      color: #cccccc;
-      font-family: monospace;
-      text-align: left;
-      padding: 2rem;
-    }
-
-    /* ===== 8. Vaporwave ===== */
-    body[data-theme="vaporwave"] {
-      background: linear-gradient(180deg, #ff9a9e, #fad0c4, #fbc2eb);
-      color: #4a004e;
-      font-family: "Courier New", monospace;
-    }
-
-    /* ===== 9. Cyberpunk ===== */
-    body[data-theme="cyberpunk"] {
-      background: #05010a;
-      color: #00f0ff;
-      font-family: "Orbitron", monospace;
-      text-shadow: 0 0 10px #00f0ff;
-    }
-
-    /* ===== 10. Minimal Modern ===== */
-    body[data-theme="modern"] {
-      background: #0f1115;
-      color: #e6e6e6;
-      font-family: system-ui, sans-serif;
-    }
-  </style>
+        /* Boot sequence theme */
+        body[data-theme="bootsequence"] {
+            padding: 2rem;
+            background: #000;
+            color: #aaa;
+            font-family: "Courier New", monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            display: block;
+        }
+        .boot-line {
+            opacity: 0;
+            animation: boot-appear 0.05s forwards;
+            white-space: pre;
+        }
+        @keyframes boot-appear { to { opacity: 1; } }
+        .boot-ok { color: #00ff41; }
+        .boot-host { color: #00bfff; }
+        .boot-cursor {
+            display: inline-block;
+            width: 8px; height: 14px;
+            background: #aaa;
+            animation: boot-blink 1s step-end infinite;
+            vertical-align: middle;
+            margin-left: 2px;
+        }
+        @keyframes boot-blink { 50% { opacity: 0; } }
+    </style>
 </head>
 <body>
+    <!-- GeoCities theme -->
+    <div id="theme-geocities" style="display:none">
+        <h1>*** {{HOSTNAME}} ***</h1>
+        <div class="geo-construction">
+            <span class="blink">NEW!</span>
+            <marquee scrollamount="10">System is online and secure --- System is online and secure</marquee>
+        </div>
+        <table class="geo-table">
+            <tr>
+                <td>
+                    <p>Welcome to my server! You have reached the digital home of <b>{{HOSTNAME}}</b>.</p>
+                    <hr>
+                    <p>STATUS: <span style="color: blue; text-decoration: underline;">OPERATIONAL</span></p>
+                    <p>This site is best viewed in Netscape Navigator 4.0 at 800x600 resolution!</p>
+                </td>
+            </tr>
+        </table>
+        <p>Visitor Number:</p>
+        <div class="geo-counter">000042</div>
+        <p><br>Last Updated: April 2026</p>
+    </div>
 
-<!-- Terminal -->
-<div id="terminal" class="center" hidden>
-  <div class="terminal-box">
-    <h1>{{HOSTNAME}}</h1>
-    <p>System is online and secure</p>
-  </div>
-</div>
+    <!-- Synthwave theme -->
+    <div id="theme-synthwave" style="display:none">
+        <div class="synth-sun"></div>
+        <div class="synth-content">
+            <h1>{{HOSTNAME}}</h1>
+            <p>System is online and secure</p>
+        </div>
+        <div class="synth-grid-container">
+            <div class="synth-grid"></div>
+        </div>
+    </div>
 
-<!-- Matrix -->
-<canvas id="matrixCanvas" hidden></canvas>
-<div id="matrix" class="center matrix-overlay" hidden>
-  <h1 style="color:#00ff41">{{HOSTNAME}}</h1>
-  <p style="color:#00ff41">System is online and secure</p>
-</div>
+    <!-- Boot sequence theme -->
+    <div id="theme-bootsequence" style="display:none">
+        <div class="boot-line" style="animation-delay:0.2s">NixOS/GNU Boot System v25.11</div>
+        <div class="boot-line" style="animation-delay:0.4s">Copyright (c) 2026 NixOS Contributors</div>
+        <div class="boot-line" style="animation-delay:0.6s">&nbsp;</div>
+        <div class="boot-line" style="animation-delay:0.9s">Hostname ............... <span class="boot-host">{{HOSTNAME}}</span></div>
+        <div class="boot-line" style="animation-delay:1.3s">Hardware check ......... <span class="boot-ok">[  OK  ]</span></div>
+        <div class="boot-line" style="animation-delay:1.7s">Loading kernel modules . <span class="boot-ok">[  OK  ]</span></div>
+        <div class="boot-line" style="animation-delay:2.1s">Mounting filesystems ... <span class="boot-ok">[  OK  ]</span></div>
+        <div class="boot-line" style="animation-delay:2.5s">Starting sops-nix ...... <span class="boot-ok">[  OK  ]</span></div>
+        <div class="boot-line" style="animation-delay:2.9s">Decrypting secrets ..... <span class="boot-ok">[  OK  ]</span></div>
+        <div class="boot-line" style="animation-delay:3.3s">Starting OpenSSH ....... <span class="boot-ok">[  OK  ]</span></div>
+        <div class="boot-line" style="animation-delay:3.7s">Starting Caddy ......... <span class="boot-ok">[  OK  ]</span></div>
+        <div class="boot-line" style="animation-delay:4.1s">ACME certificate ....... <span class="boot-ok">[  OK  ]</span></div>
+        <div class="boot-line" style="animation-delay:4.5s">Firewall (nftables) .... <span class="boot-ok">[  OK  ]</span></div>
+        <div class="boot-line" style="animation-delay:4.9s">&nbsp;</div>
+        <div class="boot-line" style="animation-delay:5.3s"><span class="boot-ok">All services operational.</span></div>
+        <div class="boot-line" style="animation-delay:5.7s">&nbsp;</div>
+        <div class="boot-line" style="animation-delay:6.1s"><span class="boot-host">{{HOSTNAME}}</span> login: <span class="boot-cursor"></span></div>
+    </div>
 
-<!-- Blueprint -->
-<div id="blueprint" class="center" hidden>
-  <h1>{{HOSTNAME}}</h1>
-  <p>System is online and secure</p>
-</div>
+    <script>
+        const themes = ["geocities", "synthwave", "bootsequence"];
+        const pick = themes[Math.floor(Math.random() * themes.length)];
 
-<!-- GeoCities -->
-<div id="geocities" class="center" hidden>
-  <h1>*** {{HOSTNAME}} ***</h1>
-  <marquee>System is online and secure</marquee>
-  <p>Best viewed at 800x600</p>
-</div>
-
-<!-- Stranger Things -->
-<div id="stranger" class="center" hidden>
-  <h1>{{HOSTNAME}}</h1>
-  <p>THE GATE IS OPEN</p>
-</div>
-
-<!-- Windows NT -->
-<div id="windowsnt" class="center" hidden>
-  <h1>Microsoft Internet Information Services</h1>
-  <p>{{HOSTNAME}}</p>
-  <p>Status: Running</p>
-</div>
-
-<!-- UNIX -->
-<div id="unix" hidden>
-  <pre>
-Welcome to UNIX System V Release 4.2
-
-{{HOSTNAME}} login: _
-  </pre>
-</div>
-
-<!-- Vaporwave -->
-<div id="vaporwave" class="center" hidden>
-  <h1>{{HOSTNAME}}</h1>
-  <p>ＡＥＳＴＨＥＴＩＣ　ＯＮＬＩＮＥ</p>
-</div>
-
-<!-- Cyberpunk -->
-<div id="cyberpunk" class="center" hidden>
-  <h1>{{HOSTNAME}}</h1>
-  <p>NODE CONNECTED</p>
-</div>
-
-<!-- Modern -->
-<div id="modern" class="center" hidden>
-  <h1>{{HOSTNAME}}</h1>
-  <p>All systems operational</p>
-</div>
-
-<script>
-const themes = [
-  "terminal","matrix","blueprint","geocities","stranger",
-  "windowsnt","unix","vaporwave","cyberpunk","modern"
-];
-const pick = themes[Math.floor(Math.random() * themes.length)];
-document.body.dataset.theme = pick;
-document.getElementById(pick).hidden = false;
-
-// Matrix animation
-if (pick === "matrix") {
-  const canvas = document.getElementById("matrixCanvas");
-  canvas.hidden = false;
-  const ctx = canvas.getContext("2d");
-  const chars = "アイウエオカキクケコ0123456789";
-  let w, h, cols, drops;
-  function resize() {
-    w = canvas.width = window.innerWidth;
-    h = canvas.height = window.innerHeight;
-    cols = Math.floor(w / 20);
-    drops = Array(cols).fill(1);
-  }
-  function draw() {
-    ctx.fillStyle = "rgba(0,0,0,0.05)";
-    ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = "#00ff41";
-    ctx.font = "16px monospace";
-    for (let i = 0; i < drops.length; i++) {
-      const t = chars[Math.floor(Math.random() * chars.length)];
-      ctx.fillText(t, i * 20, drops[i] * 20);
-      if (drops[i] * 20 > h && Math.random() > 0.975) drops[i] = 0;
-      drops[i]++;
-    }
-  }
-  resize();
-  window.addEventListener("resize", resize);
-  setInterval(draw, 50);
-}
-</script>
+        document.body.setAttribute("data-theme", pick);
+        document.getElementById("theme-" + pick).style.display = "";
+    </script>
 </body>
 </html>

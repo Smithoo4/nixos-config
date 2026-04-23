@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{HOSTNAME}}</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        body { background: #000; overflow: hidden; }
+        canvas { display: block; }
+        .overlay {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 10;
+            pointer-events: none;
+        }
+        h1 {
+            font-family: "Courier New", monospace;
+            font-size: 4rem;
+            color: #00ff41;
+            text-shadow: 0 0 20px #00ff41, 0 0 40px #00ff41;
+            text-transform: uppercase;
+            letter-spacing: 10px;
+        }
+        p {
+            font-family: "Courier New", monospace;
+            color: #00ff41;
+            font-size: 1.2rem;
+            margin-top: 1rem;
+            opacity: 0.7;
+            letter-spacing: 3px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="rain"></canvas>
+    <div class="overlay">
+        <h1>{{HOSTNAME}}</h1>
+        <p>System is online and secure</p>
+    </div>
+    <script>
+        const canvas = document.getElementById("rain");
+        const ctx = canvas.getContext("2d");
+        let w, h, cols, drops;
+        const chars = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789";
+        function init() {
+            w = canvas.width = window.innerWidth;
+            h = canvas.height = window.innerHeight;
+            cols = Math.floor(w / 20);
+            drops = Array(cols).fill(1);
+        }
+        function draw() {
+            ctx.fillStyle = "rgba(0,0,0,0.05)";
+            ctx.fillRect(0, 0, w, h);
+            ctx.fillStyle = "#00ff41";
+            ctx.font = "16px monospace";
+            for (let i = 0; i < drops.length; i++) {
+                const t = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(t, i * 20, drops[i] * 20);
+                if (drops[i] * 20 > h && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        init();
+        window.addEventListener("resize", init);
+        setInterval(draw, 50);
+    </script>
+</body>
+</html>
