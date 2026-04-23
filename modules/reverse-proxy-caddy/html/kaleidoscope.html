@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{HOSTNAME}}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { width: 100vw; height: 100vh; overflow: hidden; }
+    .center { display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; text-align:center; }
+
+    /* 1. Neon Wireframe */
+    body[data-theme="wireframe"] { background:#02010a; color:#00ffff; font-family:monospace; }
+    body[data-theme="wireframe"]::before { content:""; position:fixed; inset:0; background:linear-gradient(#00ffff22 1px,transparent 1px),linear-gradient(90deg,#00ffff22 1px,transparent 1px); background-size:40px 40px; }
+
+    /* 2. DOS Prompt */
+    body[data-theme="dos"] { background:#000; color:#c0c0c0; font-family:monospace; padding:2rem; }
+
+    /* 3. Starfield */
+    body[data-theme="starfield"] { background:black; color:white; font-family:sans-serif; }
+
+    /* 4. VHS Horror */
+    body[data-theme="vhs"] { background:#000; color:#ff0040; font-family:"Arial Black",sans-serif; text-shadow:0 0 12px #ff0040; }
+
+    /* 5. Mainframe */
+    body[data-theme="mainframe"] { background:#001a00; color:#33ff33; font-family:monospace; }
+
+    /* 6. Radar Screen */
+    body[data-theme="radar"] { background:#001; color:#0f0; font-family:monospace; }
+
+    /* 7. Hacker News parody */
+    body[data-theme="hacker"] { background:#f6f6ef; color:#000; font-family:Verdana,sans-serif; }
+
+    /* 8. Museum Exhibit */
+    body[data-theme="museum"] { background:#f5f5f5; color:#222; font-family:Georgia,serif; }
+
+    /* 9. Outrun Grid */
+    body[data-theme="outrun"] { background:linear-gradient(#200020,#000); color:#ff00ff; font-family:monospace; }
+
+    /* 10. Emergency Broadcast */
+    body[data-theme="eas"] { background:#000; color:#ffff00; font-family:monospace; }
+  </style>
+</head>
+<body>
+
+<div id="wireframe" class="center" hidden>
+  <h1>{{HOSTNAME}}</h1>
+  <p>NEON GRID ONLINE</p>
+</div>
+
+<div id="dos" hidden>
+<pre>
+C:\> STATUS
+SYSTEM {{HOSTNAME}}
+ONLINE
+
+C:\> _
+</pre>
+</div>
+
+<div id="starfield" class="center" hidden>
+  <h1>{{HOSTNAME}}</h1>
+  <p>Orbit stable. All systems nominal.</p>
+</div>
+
+<div id="vhs" class="center" hidden>
+  <h1>{{HOSTNAME}}</h1>
+  <p>SIGNAL LOCKED</p>
+</div>
+
+<div id="mainframe" class="center" hidden>
+  <h1>{{HOSTNAME}}</h1>
+  <p>SESSION ACTIVE</p>
+</div>
+
+<div id="radar" class="center" hidden>
+  <h1>{{HOSTNAME}}</h1>
+  <p>CONTACT CONFIRMED</p>
+</div>
+
+<div id="hacker" class="center" hidden>
+  <h1>{{HOSTNAME}}</h1>
+  <p>System is online</p>
+</div>
+
+<div id="museum" class="center" hidden>
+  <h1>{{HOSTNAME}}</h1>
+  <p>Exhibit currently operational</p>
+</div>
+
+<div id="outrun" class="center" hidden>
+  <h1>{{HOSTNAME}}</h1>
+  <p>RUN MODE ENABLED</p>
+</div>
+
+<div id="eas" class="center" hidden>
+  <h1>{{HOSTNAME}}</h1>
+  <p>THIS IS A TEST</p>
+</div>
+
+<script>
+const themes = ["wireframe","dos","starfield","vhs","mainframe","radar","hacker","museum","outrun","eas"];
+const pick = themes[Math.floor(Math.random() * themes.length)];
+document.body.dataset.theme = pick;
+document.getElementById(pick).hidden = false;
+</script>
+</body>
+</html>

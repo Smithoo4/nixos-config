@@ -1,213 +1,226 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>{{HOSTNAME}}</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { overflow: hidden; height: 100vh; }
+  <meta charset="UTF-8">
+  <title>{{HOSTNAME}}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { width: 100vw; height: 100vh; overflow: hidden; }
 
-        /* Terminal theme */
-        body[data-theme="terminal"] {
-            background: #050505;
-            color: #00ff41;
-            font-family: "Courier New", Courier, monospace;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        body[data-theme="terminal"]::before {
-            content: " ";
-            position: absolute;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,.25) 50%),
-                        linear-gradient(90deg, rgba(255,0,0,.06), rgba(0,255,0,.02), rgba(0,0,255,.06));
-            background-size: 100% 2px, 3px 100%;
-            z-index: 2;
-            pointer-events: none;
-        }
-        .terminal-container {
-            text-align: center;
-            border: 2px solid #00ff41;
-            padding: 4rem;
-            box-shadow: 0 0 20px #00ff41, inset 0 0 20px #00ff41;
-            position: relative;
-            z-index: 1;
-        }
-        .terminal-container h1 {
-            font-size: 3.5rem;
-            text-transform: uppercase;
-            letter-spacing: 10px;
-            text-shadow: 0 0 10px #00ff41;
-        }
-        .terminal-container p {
-            margin-top: 2rem;
-            font-size: 1.2rem;
-            letter-spacing: 2px;
-            opacity: 0.8;
-        }
-        .flicker { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%{opacity:1} 50%{opacity:.4} 100%{opacity:1} }
+    /* ===== Shared ===== */
+    .center {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+    }
 
-        /* Matrix theme */
-        body[data-theme="matrix"] { background: #000; }
-        body[data-theme="matrix"] canvas { display: block; }
-        .matrix-overlay {
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            z-index: 10;
-            pointer-events: none;
-        }
-        .matrix-overlay h1 {
-            font-family: "Courier New", monospace;
-            font-size: 4rem;
-            color: #00ff41;
-            text-shadow: 0 0 20px #00ff41, 0 0 40px #00ff41;
-            text-transform: uppercase;
-            letter-spacing: 10px;
-        }
-        .matrix-overlay p {
-            font-family: "Courier New", monospace;
-            color: #00ff41;
-            font-size: 1.2rem;
-            margin-top: 1rem;
-            opacity: 0.7;
-            letter-spacing: 3px;
-        }
+    /* ===== 1. Terminal ===== */
+    body[data-theme="terminal"] {
+      background: #050505;
+      color: #00ff41;
+      font-family: "Courier New", monospace;
+    }
+    body[data-theme="terminal"]::before {
+      content: "";
+      position: fixed; inset: 0;
+      background:
+        linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,.25) 50%),
+        linear-gradient(90deg, rgba(255,0,0,.06), rgba(0,255,0,.02), rgba(0,0,255,.06));
+      background-size: 100% 2px, 3px 100%;
+      pointer-events: none;
+    }
+    .terminal-box {
+      border: 2px solid #00ff41;
+      padding: 4rem;
+      box-shadow: 0 0 20px #00ff41, inset 0 0 20px #00ff41;
+    }
 
-        /* Blueprint theme */
-        body[data-theme="blueprint"] {
-            background-color: #0a1628;
-            background-image:
-                linear-gradient(rgba(65,135,235,0.15) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(65,135,235,0.15) 1px, transparent 1px),
-                linear-gradient(rgba(65,135,235,0.08) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(65,135,235,0.08) 1px, transparent 1px);
-            background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
-            color: #4187eb;
-            font-family: "Courier New", monospace;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .blueprint-frame {
-            border: 1px solid rgba(65,135,235,0.4);
-            padding: 5rem 6rem;
-            position: relative;
-            text-align: center;
-        }
-        .blueprint-frame::before { content: "+"; position: absolute; top: -2px; left: 6px; color: rgba(65,135,235,0.4); font-size: 1.2rem; }
-        .blueprint-frame::after  { content: "+"; position: absolute; top: -2px; right: 6px; color: rgba(65,135,235,0.4); font-size: 1.2rem; }
-        .blueprint-inner::before { content: "+"; position: absolute; bottom: -2px; left: 6px; color: rgba(65,135,235,0.4); font-size: 1.2rem; }
-        .blueprint-inner::after  { content: "+"; position: absolute; bottom: -2px; right: 6px; color: rgba(65,135,235,0.4); font-size: 1.2rem; }
-        .blueprint-label {
-            font-size: 0.7rem;
-            letter-spacing: 4px;
-            text-transform: uppercase;
-            color: rgba(65,135,235,0.4);
-            margin-bottom: 1rem;
-        }
-        .blueprint-frame h1 {
-            font-size: 3.5rem;
-            font-weight: 300;
-            text-transform: uppercase;
-            letter-spacing: 12px;
-        }
-        .blueprint-status {
-            margin-top: 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.8rem;
-            font-size: 0.9rem;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            color: rgba(65,135,235,0.4);
-        }
-        .blueprint-dot {
-            width: 8px; height: 8px; border-radius: 50%;
-            background: #4187eb;
-            animation: bp-blink 2s infinite;
-        }
-        @keyframes bp-blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-        .blueprint-dwg {
-            position: absolute;
-            bottom: 10px; right: 15px;
-            font-size: 0.6rem;
-            color: rgba(65,135,235,0.4);
-            letter-spacing: 2px;
-        }
-    </style>
+    /* ===== 2. Matrix ===== */
+    body[data-theme="matrix"] { background: #000; }
+    #matrixCanvas { position: fixed; inset: 0; }
+    .matrix-overlay { position: fixed; inset: 0; }
+
+    /* ===== 3. Blueprint ===== */
+    body[data-theme="blueprint"] {
+      background-color: #0a1628;
+      background-image:
+        linear-gradient(rgba(65,135,235,0.15) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(65,135,235,0.15) 1px, transparent 1px),
+        linear-gradient(rgba(65,135,235,0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(65,135,235,0.08) 1px, transparent 1px);
+      background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+      color: #4187eb;
+      font-family: "Courier New", monospace;
+    }
+
+    /* ===== 4. GeoCities ===== */
+    body[data-theme="geocities"] {
+      background: #000080;
+      color: #ffff00;
+      font-family: "Comic Sans MS", cursive;
+      overflow-y: auto;
+    }
+
+    /* ===== 5. Stranger Things ===== */
+    body[data-theme="stranger"] {
+      background: radial-gradient(circle, #300 0%, #000 70%);
+      color: #ff3333;
+      font-family: "Arial Black", sans-serif;
+      letter-spacing: 3px;
+      text-shadow: 0 0 15px red;
+    }
+
+    /* ===== 6. Windows NT / IIS ===== */
+    body[data-theme="windowsnt"] {
+      background: #004e98;
+      color: #ffffff;
+      font-family: Tahoma, Verdana, sans-serif;
+    }
+
+    /* ===== 7. UNIX Login ===== */
+    body[data-theme="unix"] {
+      background: #000;
+      color: #cccccc;
+      font-family: monospace;
+      text-align: left;
+      padding: 2rem;
+    }
+
+    /* ===== 8. Vaporwave ===== */
+    body[data-theme="vaporwave"] {
+      background: linear-gradient(180deg, #ff9a9e, #fad0c4, #fbc2eb);
+      color: #4a004e;
+      font-family: "Courier New", monospace;
+    }
+
+    /* ===== 9. Cyberpunk ===== */
+    body[data-theme="cyberpunk"] {
+      background: #05010a;
+      color: #00f0ff;
+      font-family: "Orbitron", monospace;
+      text-shadow: 0 0 10px #00f0ff;
+    }
+
+    /* ===== 10. Minimal Modern ===== */
+    body[data-theme="modern"] {
+      background: #0f1115;
+      color: #e6e6e6;
+      font-family: system-ui, sans-serif;
+    }
+  </style>
 </head>
 <body>
-    <!-- Terminal theme -->
-    <div id="theme-terminal" style="display:none">
-        <div class="terminal-container">
-            <h1>{{HOSTNAME}}</h1>
-            <p class="flicker">System is online and secure</p>
-        </div>
-    </div>
 
-    <!-- Matrix theme -->
-    <div id="theme-matrix" style="display:none">
-        <canvas id="rain"></canvas>
-        <div class="matrix-overlay">
-            <h1>{{HOSTNAME}}</h1>
-            <p>System is online and secure</p>
-        </div>
-    </div>
+<!-- Terminal -->
+<div id="terminal" class="center" hidden>
+  <div class="terminal-box">
+    <h1>{{HOSTNAME}}</h1>
+    <p>System is online and secure</p>
+  </div>
+</div>
 
-    <!-- Blueprint theme -->
-    <div id="theme-blueprint" style="display:none">
-        <div class="blueprint-frame">
-            <div class="blueprint-inner"></div>
-            <div class="blueprint-label">System Designation</div>
-            <h1>{{HOSTNAME}}</h1>
-            <div class="blueprint-status">
-                <div class="blueprint-dot"></div>
-                System is online and secure
-            </div>
-            <div class="blueprint-dwg">DWG NO. {{HOSTNAME}}-001 REV. A</div>
-        </div>
-    </div>
+<!-- Matrix -->
+<canvas id="matrixCanvas" hidden></canvas>
+<div id="matrix" class="center matrix-overlay" hidden>
+  <h1 style="color:#00ff41">{{HOSTNAME}}</h1>
+  <p style="color:#00ff41">System is online and secure</p>
+</div>
 
-    <script>
-        const themes = ["terminal", "matrix", "blueprint"];
-        const pick = themes[Math.floor(Math.random() * themes.length)];
+<!-- Blueprint -->
+<div id="blueprint" class="center" hidden>
+  <h1>{{HOSTNAME}}</h1>
+  <p>System is online and secure</p>
+</div>
 
-        document.body.setAttribute("data-theme", pick);
-        document.getElementById("theme-" + pick).style.display = "";
+<!-- GeoCities -->
+<div id="geocities" class="center" hidden>
+  <h1>*** {{HOSTNAME}} ***</h1>
+  <marquee>System is online and secure</marquee>
+  <p>Best viewed at 800x600</p>
+</div>
 
-        // Matrix canvas animation
-        if (pick === "matrix") {
-            const canvas = document.getElementById("rain");
-            const ctx = canvas.getContext("2d");
-            const chars = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789";
-            let w, h, cols, drops;
-            function init() {
-                w = canvas.width = window.innerWidth;
-                h = canvas.height = window.innerHeight;
-                cols = Math.floor(w / 20);
-                drops = Array(cols).fill(1);
-            }
-            function draw() {
-                ctx.fillStyle = "rgba(0,0,0,0.05)";
-                ctx.fillRect(0, 0, w, h);
-                ctx.fillStyle = "#00ff41";
-                ctx.font = "16px monospace";
-                for (let i = 0; i < drops.length; i++) {
-                    const t = chars[Math.floor(Math.random() * chars.length)];
-                    ctx.fillText(t, i * 20, drops[i] * 20);
-                    if (drops[i] * 20 > h && Math.random() > 0.975) drops[i] = 0;
-                    drops[i]++;
-                }
-            }
-            init();
-            window.addEventListener("resize", init);
-            setInterval(draw, 50);
-        }
-    </script>
+<!-- Stranger Things -->
+<div id="stranger" class="center" hidden>
+  <h1>{{HOSTNAME}}</h1>
+  <p>THE GATE IS OPEN</p>
+</div>
+
+<!-- Windows NT -->
+<div id="windowsnt" class="center" hidden>
+  <h1>Microsoft Internet Information Services</h1>
+  <p>{{HOSTNAME}}</p>
+  <p>Status: Running</p>
+</div>
+
+<!-- UNIX -->
+<div id="unix" hidden>
+  <pre>
+Welcome to UNIX System V Release 4.2
+
+{{HOSTNAME}} login: _
+  </pre>
+</div>
+
+<!-- Vaporwave -->
+<div id="vaporwave" class="center" hidden>
+  <h1>{{HOSTNAME}}</h1>
+  <p>ＡＥＳＴＨＥＴＩＣ　ＯＮＬＩＮＥ</p>
+</div>
+
+<!-- Cyberpunk -->
+<div id="cyberpunk" class="center" hidden>
+  <h1>{{HOSTNAME}}</h1>
+  <p>NODE CONNECTED</p>
+</div>
+
+<!-- Modern -->
+<div id="modern" class="center" hidden>
+  <h1>{{HOSTNAME}}</h1>
+  <p>All systems operational</p>
+</div>
+
+<script>
+const themes = [
+  "terminal","matrix","blueprint","geocities","stranger",
+  "windowsnt","unix","vaporwave","cyberpunk","modern"
+];
+const pick = themes[Math.floor(Math.random() * themes.length)];
+document.body.dataset.theme = pick;
+document.getElementById(pick).hidden = false;
+
+// Matrix animation
+if (pick === "matrix") {
+  const canvas = document.getElementById("matrixCanvas");
+  canvas.hidden = false;
+  const ctx = canvas.getContext("2d");
+  const chars = "アイウエオカキクケコ0123456789";
+  let w, h, cols, drops;
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+    cols = Math.floor(w / 20);
+    drops = Array(cols).fill(1);
+  }
+  function draw() {
+    ctx.fillStyle = "rgba(0,0,0,0.05)";
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = "#00ff41";
+    ctx.font = "16px monospace";
+    for (let i = 0; i < drops.length; i++) {
+      const t = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(t, i * 20, drops[i] * 20);
+      if (drops[i] * 20 > h && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    }
+  }
+  resize();
+  window.addEventListener("resize", resize);
+  setInterval(draw, 50);
+}
+</script>
 </body>
 </html>
