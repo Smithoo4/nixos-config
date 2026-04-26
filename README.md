@@ -23,9 +23,9 @@ Active Development — currently being refined, expanded, and tested.
 
 ### Phase 1: Core System & Infrastructure
 - [x] Initial installation guide [here](https://github.com/Smithoo4/nixos-config/blob/main/nixos-homeserver-install-guide.md)
-    - [x] Install NixOS from scratch (Flakes + Disko)
+    - [x] Install NixOS from scratch (Flakes + [Disko](https://github.com/nix-community/disko))
     - [x] Home Manager and Git integration
-    - [x] Secrets Management via SOPS-Nix
+    - [x] Secrets Management via [SOPS-Nix](https://github.com/mic92/sops-nix)
 - [x] Refactor configuration for modular, multi-host support
 - [x] msmtp setup
 - [x] S.M.A.R.T disk monitoring with email notifications via `smartd`
@@ -37,15 +37,15 @@ Active Development — currently being refined, expanded, and tested.
 
 ### Phase 2: Reverse Proxy
 *Goal: Evaluate Caddy and Nginx.*
-- [X] Set up Caddy
-    - [X] ACME DNS challenge using DuckDNS
+- [X] Set up [Caddy](https://caddyserver.com/)
+    - [X] ACME DNS challenge using [DuckDNS](https://www.duckdns.org/domains)
     - [X] Enable HTTP/3
     - [X] Hardened proxy connections
     - [X] Strict host matching and drop unmatched requests (e.g. no connecting unless it matches an FQDN)
     - [X] Serve a test page
     - [X] Template for proxying future services
-- [X] Set up Nginx
-    - [X] ACME DNS challenge using DuckDNS
+- [X] Set up [Nginx](https://nginx.org/)
+    - [X] ACME DNS challenge using [DuckDNS](https://www.duckdns.org/domains)
     - [X] Enable HTTP/3
     - [X] Hardened proxy connections
     - [X] Strict host matching and drop unmatched requests (e.g. no connecting unless it matches an FQDN)
@@ -58,22 +58,34 @@ Active Development — currently being refined, expanded, and tested.
 Caddy's custom DuckDNS plugin build adds compile-time friction, especially on low-power ARM hosts. Nginx offers equivalent features with the mature, pre-built `lego` ACME client and better NixOS integration. Both will continue running on separate hosts during early service deployments to compare real-world behavior before full fleet commitment.
   
 ### Phase 3: Deployment & Documentation
+- [X] Store configuration exclusively in GitHub (no local persistence)
 - [ ] Comprehensive deployment tutorial
-    - [ ] Install second host (`fourohm`) pulling config from GitHub
-    - [ ] Evaluate [nixos-anywhere](https://github.com/nix-community/nixos-anywhere)
+    - [X] Install second host (`fourohm`) pulling config from GitHub
+    - [X] Evaluate [nixos-anywhere](https://github.com/nix-community/nixos-anywhere)
+    - [ ] Cover installing on raspberry pi 4
+    - [ ] Cover installing on an oracle arm VPS
 
-### Phase 3a: Ideas & Modular Exploration (Optional)
-- [ ] Store configuration exclusively in GitHub (no local persistence)
-- [ ] Reconsider using:
-    - [ ] Nginx as Reverse Proxy
-        - *I'm not a fan of having to compile a custom Caddy build just to get the DNS challenge working. It adds unnecessary complexity, and I'm worried about long compile times on low-power ARM machines.*
-    - [ ] Dynamic DNS using another provider
-        - *DYNU: I've used it before, and it has lots of nice features plus a wider selection of domain names.*
-    - [ ] Agenix for Secrets Management
-    	- *I like sops-nix, but I'm worried about long compile times on low-power ARM machines, which may not be an issue with Agenix.*
-- [ ] Set up CrowdSec — on hold, NixOS module has known issues (nixpkgs#446307)
+## Phase 4: Security
+- [ ] Set up [CrowdSec](https://www.crowdsec.net/) — *on hold, NixOS module has known issues ([nixpkgs#446307](https://github.com/NixOS/nixpkgs/pull/446307))*
     - [ ] SSH protection
-    - [ ] WebServer protection
+    - [ ] Caddy protection
+        - [ ] Block repeated requests that don't match an FQDN (IP-only / unknown SNI)
+    - [ ] Nginx protection
+        - [ ] Block repeated requests that don't match an FQDN (IP-only / unknown SNI)
+    - [ ] Evaluate [CrowdSec Console](https://app.crowdsec.net/) — cloud monitoring & automation dashboard
+    - [ ] Evaluate [Metabase](https://www.metabase.com/) — local self-hosted dashboard (`cscli dashboard setup`)
+- [ ] Set up [Fail2Ban](https://github.com/fail2ban/fail2ban) — *only being considered because of implementation issues with CrowdSec on NixOS*
+    - [ ] SSH protection
+    - [ ] Caddy protection
+        - [ ] Block repeated requests that don't match an FQDN (IP-only / unknown SNI)
+    - [ ] Nginx protection
+        - [ ] Block repeated requests that don't match an FQDN (IP-only / unknown SNI)
+
+&gt; **Note:** Not all evaluated tools will necessarily be implemented. Items are tracked for comparison and may be dropped based on findings.
+
+### Phase 5: Ideas & Modular Exploration (Optional)
+ - [ ] Evaluate Dynamic DNS using another provider
+        - [DYNU](https://www.dynu.com/en-US): I've used it before, and it has lots of nice features plus a wider selection of domain names.
 - [ ] Evaluate [flake-parts](https://github.com/hercules-ci/flake-parts)
 - [ ] Refactor configuration layout based on lessons learned
 - [ ] Static ip address on local network
@@ -84,30 +96,30 @@ Caddy's custom DuckDNS plugin build adds compile-time friction, especially on lo
      - [ ] IPv4 with NAT Port Forwarding
      - [ ] IPv6
 
-### Phase 4: Authentication & SSO
+### Phase 6: Authentication & SSO
 *Goal: Evaluate alternatives to Authelia + lldap.*
 - [ ] Evaluate and deploy SSO
     - [ ] Options: Kanidm, Keycloak, Rauthy, Authentik, Zitadel, Ory, Janssen, Casdoor, or Pomerium
 - [ ] Implement forward auth with reverse proxy
 - [ ] Centralized authentication for all services
 
-### Phase 4a: Self-hosted DNS Sinkholes (Optional)
+### Phase 7: Self-hosted DNS Sinkholes (Optional)
 - [ ] Evaluate and deploy DNS Sinkholes
    - [ ] Options: AdGuard Home, Pi-hole, Blocky, Technitium DNS Server
    - [ ] Working with IPv6 
 
-### Phase 5: File Storage & Collaboration
+### Phase 8: File Storage & Collaboration
 *Goal: Evaluate alternatives to Nextcloud setup.*
 - [ ] Evaluate and deploy storage/collaboration (OpenCloud, Pydio Cells, or Seafile)
 - [ ] Evaluate Office integration (Collabora or OnlyOffice)
 - [ ] Full-text document search (PDF and Office documents)
 
-### Phase 6: Media & Content
+### Phase 9: Media & Content
 - [ ] Photo management (Immich, PhotoPrism, Lychee, or Phase 5 selection)
 - [ ] Recipe management (Mealie, Tandoor Recipes, or Grocy)
 - [ ] E-book servers (Calibre-Web, Kavita, Komga, or Ubooquity)
 
-### Phase 7: Storage & Backups
+### Phase 10: Storage & Backups
 - [ ] Storage system implementation (ZFS, Btrfs, or other RAID/NAS solutions)
 - [ ] Off-site backups
 
