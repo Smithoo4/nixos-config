@@ -15,9 +15,7 @@ Active Development — currently being refined, expanded, and tested.
 | **oneohm** | Active Development | Testing and development |
 | **twoohm** | Planned | TBD |
 | **threeohm** | Planned | TBD |
-| **fourohm** | Planned | TBD |
-
-*Note: All hosts except `oneohm` are currently in the planning stage.*
+| **fourohm** | Active Development | Testing and development |
 
 ---
 
@@ -28,7 +26,6 @@ Active Development — currently being refined, expanded, and tested.
     - [x] Install NixOS from scratch (Flakes + Disko)
     - [x] Home Manager and Git integration
     - [x] Secrets Management via SOPS-Nix
-        - *Evaluated Agenix; proceeded with SOPS-Nix as the primary solution.*
 - [x] Refactor configuration for modular, multi-host support
 - [x] msmtp setup
 - [x] S.M.A.R.T disk monitoring with email notifications via `smartd`
@@ -39,13 +36,27 @@ Active Development — currently being refined, expanded, and tested.
     - [X] Email notifications of failed update or warnings
 
 ### Phase 2: Reverse Proxy
-*Goal: Evaluate alternatives to Nginx and Fail2Ban.*
+*Goal: Evaluate Caddy and Nginx.*
 - [X] Set up Caddy
     - [X] ACME DNS challenge using DuckDNS
     - [X] Enable HTTP/3
     - [X] Hardened proxy connections
-    - [X] Strict host matching (Drop unmatched requests)
+    - [X] Strict host matching and drop unmatched requests (e.g. no connecting unless it matches an FQDN)
+    - [X] Serve a test page
+    - [X] Template for proxying future services
+- [X] Set up Nginx
+    - [X] ACME DNS challenge using DuckDNS
+    - [X] Enable HTTP/3
+    - [X] Hardened proxy connections
+    - [X] Strict host matching and drop unmatched requests (e.g. no connecting unless it matches an FQDN)
+    - [X] Serve a test page
+    - [X] Template for proxying future services
+    - [ ] Test [Angie](https://github.com/webserver-llc/angie) (e.g. `services.nginx.package = pkgs.angie`)
 
+*Decision: Continue testing both, with Nginx as the standard.*  
+
+Caddy's custom DuckDNS plugin build adds compile-time friction, especially on low-power ARM hosts. Nginx offers equivalent features with the mature, pre-built `lego` ACME client and better NixOS integration. Both will continue running on separate hosts during early service deployments to compare real-world behavior before full fleet commitment.
+  
 ### Phase 3: Deployment & Documentation
 - [ ] Comprehensive deployment tutorial
     - [ ] Install second host (`fourohm`) pulling config from GitHub
