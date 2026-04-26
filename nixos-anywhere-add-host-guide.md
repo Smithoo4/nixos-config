@@ -24,28 +24,28 @@ reachable over SSH from the source machine and must be running one of:
 
 - The **NixOS minimal ISO** (recommended, works on any hardware).
 - Any Linux system with `kexec` support (e.g. a fresh VPS, a cloud VM, a
-bare-metal server booted from a rescue image).
+  bare-metal server booted from a rescue image).
 
 ---
 
 ## Assumptions
 
 - You have a working [nixos-config](https://github.com/Smithoo4/nixos-config)
-repository structured with Flakes, Disko, sops-nix, and Home Manager.
+  repository structured with Flakes, Disko, sops-nix, and Home Manager.
 - The source machine has the `nixos-config` repository cloned and has `age`
-and `sops` installed.
+  and `sops` installed.
 - The source machine has the admin age key available at
-`~/.config/sops/age/keys.txt` (or `SOPS_AGE_KEY_FILE` set). This is
-required to re-encrypt secrets in Section 6.
+  `~/.config/sops/age/keys.txt` (or `SOPS_AGE_KEY_FILE` set). This is
+  required to re-encrypt secrets in Section 6.
 - The source machine can reach the target machine over SSH. How to set this
-up is covered in [Section 1](#1-prepare-the-target-machine).
+  up is covered in [Section 1](#1-prepare-the-target-machine).
 - The target machine should have a DHCP reservation (based on its MAC address)
-so that its IP address does not change between boots. Without this, the
-machine may receive a different IP after rebooting into the kexec environment
-or the newly installed system, causing nixos-anywhere to lose its connection
-mid-install.
+  so that its IP address does not change between boots. Without this, the
+  machine may receive a different IP after rebooting into the kexec environment
+  or the newly installed system, causing nixos-anywhere to lose its connection
+  mid-install.
 - The following placeholders are used throughout this guide. Substitute your
-own values wherever they appear:
+  own values wherever they appear:
 
 | Placeholder | Meaning |
 |---|---|
@@ -68,13 +68,17 @@ own values wherever they appear:
 8. [Run the nixos-anywhere Install](#8-run-the-nixos-anywhere-install)
 9. [Post-Install Checks and Cleanup](#9-post-install-checks-and-cleanup)
 
+**Appendices**
+
+- [Appendix A: Setting Up binfmt for Cross-Architecture Builds](#appendix-a-setting-up-binfmt-for-cross-architecture-builds)
+- [Appendix B: Booting a Raspberry Pi 4 into a NixOS Live Environment](#appendix-b-booting-a-raspberry-pi-4-into-a-nixos-live-environment)
+
 ---
 
 ## 1. Prepare the Target Machine
 
 nixos-anywhere needs SSH access to the target as `root`, or as a user who can
-run `sudo` without a password. The steps below vary depending on what is
-running on the target.
+run `sudo` without a password.
 
 > **Note:** The first time you SSH into the target, you will be prompted to
 > accept its host fingerprint. Since the live ISO (or VPS rescue image) is a
@@ -127,6 +131,28 @@ source machine, connect with:
 ssh root@<TARGET-IP>
 ```
 
+> **Note — kexec availability:**
+> kexec is not supported on all hardware. Known cases where it is unavailable:
+>
+> - **Raspberry Pi 4** — kexec is explicitly unsupported
+> - **Some VPS/cloud providers** — `kexec_load_disabled=1` in the kernel
+>
+> Check on the target with:
+>
+> ```bash
+> cat /proc/sys/kernel/kexec_load_disabled
+> ```
+>
+> `0` means kexec is enabled. `1` means disabled.
+>
+> When kexec is unavailable, nixos-anywhere **cannot take over a running
+> non-NixOS system**. The workaround is to boot the target into a **NixOS
+> live environment first** (SD card image, USB, or ISO). Once the target is
+> already running NixOS, nixos-anywhere detects this and skips the kexec step.
+>
+> For Raspberry Pi 4 specifically, see
+> [Appendix B](#appendix-b-booting-a-raspberry-pi-4-into-a-nixos-live-environment).
+
 ### 1.2 Already Running Linux (recommended for VPS or cloud instance)
 
 Most providers give you root SSH access by default, or let you inject an SSH
@@ -141,8 +167,8 @@ cat /proc/sys/kernel/kexec_load_disabled
 ```
 
 If the output is `0`, kexec is enabled and you can proceed. If it is `1`,
-you may need to boot from a rescue image that allows kexec, or use the NixOS
-ISO instead.
+boot from a NixOS live environment instead (see
+[Section 1.1](#11-nixos-live-iso-recommended-for-bare-metal-and-vms)).
 
 ### 1.3 Non-root user with passwordless sudo
 
@@ -256,6 +282,12 @@ nixosConfigurations = {
     timezone = "America/Edmonton";
   };
 
+  fourohm = mkHost {
+    system = "x86_64-linux";
+    hostname = "fourohm";
+    timezone = "America/Edmonton";
+  };
+
   <hostname> = mkHost {
     system = "x86_64-linux";   # or "aarch64-linux" for ARM targets
     hostname = "<hostname>";
@@ -263,6 +295,10 @@ nixosConfigurations = {
   };
 };
 ```
+
+> **Note:** The `mkHost` function already imports `./modules/common` and
+> `./users/smithoo4` for every host. You do not need to add them in the
+> host's own `default.nix`.
 
 ---
 
@@ -276,21 +312,29 @@ mkdir -p hosts/<hostname>
 
 ### 4.2 `default.nix`
 
-Create `hosts/<hostname>/default.nix`. For a standard server, start with:
+Create `hosts/<hostname>/default.nix`. The bootloader configuration belongs
+in each host's `default.nix` since it is platform-specific.
+
+For a standard UEFI server:
 
 ```nix
 { self, ... }:
 {
+  # Bootloader (UEFI)
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.systemd-boot.configurationLimit = 10;
+  boot.loader.efi.canTouchEfiVariables = true;
+
   imports = [
     # Hardware
     ./hardware-configuration.nix
     ./disko.nix
 
-    # Users
-    "${self}/users/smithoo4"
+    # Users — imported at the flake level via mkHost, not needed here
 
     # Services (uncomment and add as needed)
-    # "${self}/modules/reverse-proxy"
+    # "${self}/modules/reverse-proxy-caddy"
+    # "${self}/modules/reverse-proxy-nginx"
   ];
 
   # Set once at install time. Do NOT change after first boot.
@@ -300,7 +344,11 @@ Create `hosts/<hostname>/default.nix`. For a standard server, start with:
 
 > **Note:** `system.stateVersion` should match the NixOS release you are
 > installing. Check your `flake.nix` inputs (e.g. `nixos-25.11`) and use the
-> matching version string. Do not change it after the first boot.
+> matching version string.
+
+> **Note:** For non-UEFI targets (e.g. Raspberry Pi 4 with extlinux/U-Boot),
+> the bootloader section will differ. Do not include the `systemd-boot` lines
+> for those hosts.
 
 ### 4.3 `disko.nix`
 
@@ -375,9 +423,9 @@ Generate the key on your source machine and stage it in a temporary directory.
 nixos-anywhere will copy this directory tree onto the new system before rebooting.
 
 ```bash
-mkdir -p /tmp/extra/var/lib/sops-nix
-age-keygen -o /tmp/extra/var/lib/sops-nix/key.txt
-chmod 600 /tmp/extra/var/lib/sops-nix/key.txt
+mkdir -p /tmp/<hostname>-extra/var/lib/sops-nix
+age-keygen -o /tmp/<hostname>-extra/var/lib/sops-nix/key.txt
+chmod 600 /tmp/<hostname>-extra/var/lib/sops-nix/key.txt
 ```
 
 `age-keygen` prints the public key to the terminal when it runs. Copy the
@@ -385,10 +433,10 @@ value shown on the `Public key:` line. You will paste it into `.sops.yaml`
 in the next step.
 
 > **WARNING:**
-> The private key at `/tmp/extra/var/lib/sops-nix/key.txt` is the
+> The private key at `/tmp/<hostname>-extra/var/lib/sops-nix/key.txt` is the
 > only copy. If you lose it before the system boots, the host will be unable to
 > decrypt its secrets and you will need to start this process over. Do not
-> delete `/tmp/extra` until after the install is confirmed working.
+> delete `/tmp/<hostname>-extra` until after the install is confirmed working.
 
 ---
 
@@ -462,49 +510,86 @@ bypassing any local cache:
 nix flake prefetch --refresh github:Smithoo4/nixos-config
 ```
 
-Then run the install:
+### 8.1 Default install (build locally on the source machine)
+
+This is the standard approach. The system closure is built on your source
+machine and copied to the target. Use this when the source and target share
+the same architecture, or when the target has limited RAM.
 
 ```bash
 nix run github:nix-community/nixos-anywhere -- \
   --flake github:Smithoo4/nixos-config#<hostname> \
   --generate-hardware-config nixos-generate-config \
     hosts/<hostname>/hardware-configuration.nix \
-  --extra-files /tmp/extra \
+  --extra-files /tmp/<hostname>-extra \
   root@<TARGET-IP>
 ```
 
-**What this does, step by step:**
+### 8.2 Build on the target (`--build-on-remote`)
+
+If the target has plenty of RAM and you want to avoid cross-compilation or
+binfmt setup, you can build directly on the target. During the install, the
+target is running from **RAM** (live ISO or kexec environment), so all build
+artifacts exist in RAM. Only use this when the target has enough memory.
+
+```bash
+nix run github:nix-community/nixos-anywhere -- \
+  --flake github:Smithoo4/nixos-config#<hostname> \
+  --generate-hardware-config nixos-generate-config \
+    hosts/<hostname>/hardware-configuration.nix \
+  --extra-files /tmp/<hostname>-extra \
+  --build-on-remote \
+  root@<TARGET-IP>
+```
+
+**When to use which approach:**
+
+| Target | Target RAM | Recommendation | Why |
+|---|---|---|---|
+| x86_64 VM (oneohm, fourohm) | varies | Default (build locally) | Same arch as source — no cross-compilation needed |
+| Raspberry Pi 4 (twoohm) | 2 GB | Default + binfmt on source | 2 GB can't handle building in RAM — will OOM |
+| Oracle ARM VM | 24 GB | `--build-on-remote` | Plenty of resources, avoids binfmt setup |
+
+> **Note:** For cross-architecture builds (e.g. building `aarch64` from an
+> `x86_64` source), you need binfmt configured on your source machine. See
+> [Appendix A](#appendix-a-setting-up-binfmt-for-cross-architecture-builds).
+
+### 8.3 Non-root SSH user
+
+If you are SSH'ing as a non-root user with passwordless sudo, replace
+`root@<TARGET-IP>` with `<user>@<TARGET-IP>`:
+
+```bash
+nix run github:nix-community/nixos-anywhere -- \
+  --flake github:Smithoo4/nixos-config#<hostname> \
+  --generate-hardware-config nixos-generate-config \
+    hosts/<hostname>/hardware-configuration.nix \
+  --extra-files /tmp/<hostname>-extra \
+  <user>@<TARGET-IP>
+```
+
+> **Note:** nixos-anywhere auto-detects `sudo` and `doas` on the target
+> (since ~v1.8+). You do not need to pass a `--sudo` flag.
+
+### 8.4 What the install does, step by step
 
 1. nixos-anywhere SSH's into `<TARGET-IP>` as root.
 2. If the target is not already running NixOS, it streams a NixOS environment
-into memory via `kexec` and reboots into it. The machine stays reachable
-over SSH throughout.
+   into memory via `kexec` and reboots into it. The machine stays reachable
+   over SSH throughout.
 3. It evaluates `github:Smithoo4/nixos-config#<hostname>` and runs Disko to
-partition and format the disk as declared in `disko.nix`.
-4. It copies the contents of `/tmp/extra` onto the new system,
-placing the age private key at `/var/lib/sops-nix/key.txt` before
-first boot.
+   partition and format the disk as declared in `disko.nix`.
+4. It copies the contents of `/tmp/<hostname>-extra` onto the new system,
+   placing the age private key at `/var/lib/sops-nix/key.txt` before
+   first boot.
 5. `--generate-hardware-config` runs `nixos-generate-config` on the target,
-writes the result to `hosts/<hostname>/hardware-configuration.nix` on your
-source machine, and includes that file in the install automatically.
+   writes the result to `hosts/<hostname>/hardware-configuration.nix` on your
+   source machine, and includes that file in the install automatically.
 6. It installs NixOS and reboots the target into the newly installed system.
 
 > **Note:** The install typically takes 5 to 15 minutes depending on network
 > speed and hardware. The target will reboot automatically at the end. Your SSH
 > connection will drop at that point; that is expected.
-
-If you are SSH'ing as a non-root user with passwordless sudo, replace
-`root@<TARGET-IP>` with `<user>@<TARGET-IP>` and add `--sudo`:
-
-```bash
-nix run github:nix-community/nixos-anywhere -- \
-  --flake github:Smithoo4/nixos-config#<hostname> \
-  --generate-hardware-config nixos-generate-config \
-    hosts/<hostname>/hardware-configuration.nix \
-  --extra-files /tmp/extra \
-  --sudo \
-  <user>@<TARGET-IP>
-```
 
 ---
 
@@ -577,12 +662,12 @@ git push
 
 ### 9.4 Clean up the temporary age key
 
-The private key in `/tmp/extra` is no longer needed. It was copied
+The private key in `/tmp/<hostname>-extra` is no longer needed. It was copied
 onto the target during the nixos-anywhere run. Delete it from your source
 machine:
 
 ```bash
-rm -rf /tmp/extra
+rm -rf /tmp/<hostname>-extra
 ```
 
 > **WARNING:**
@@ -610,6 +695,161 @@ to date on its own schedule.
 
 ---
 
+## Appendix A: Setting Up binfmt for Cross-Architecture Builds
+
+When building `aarch64` packages from an `x86_64` source machine, you need
+binfmt + QEMU to emulate the target architecture. Most packages come from
+the Hydra binary cache, so actual emulated builds are rare — but binfmt must
+be registered so Nix knows it *can* build `aarch64`.
+
+### Fedora (with Nix installed)
+
+```bash
+# Install QEMU user-static
+sudo dnf install qemu-user-static
+
+# Verify aarch64 is registered
+ls /proc/sys/fs/binfmt_misc/qemu-aarch64
+
+# Tell the Nix daemon it can build aarch64
+mkdir -p ~/.config/nix
+echo "extra-platforms = aarch64-linux" >> ~/.config/nix/nix.conf
+echo "extra-sandbox-paths = /usr/bin/qemu-aarch64-static" >> ~/.config/nix/nix.conf
+
+# Restart the daemon to pick up the changes
+sudo systemctl restart nix-daemon
+```
+
+### NixOS
+
+One line in your NixOS configuration:
+
+```nix
+boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+```
+
+Rebuild and you're done. The NixOS module handles QEMU registration
+automatically.
+
+### Ubuntu 24.04 LTS (with Nix installed)
+
+```bash
+# Install QEMU user-static and binfmt support
+sudo apt update
+sudo apt install qemu-user-static
+
+# Verify aarch64 is registered
+ls /proc/sys/fs/binfmt_misc/qemu-aarch64
+
+# Tell the Nix daemon it can build aarch64
+mkdir -p ~/.config/nix
+echo "extra-platforms = aarch64-linux" >> ~/.config/nix/nix.conf
+echo "extra-sandbox-paths = /usr/bin/qemu-aarch64-static" >> ~/.config/nix/nix.conf
+
+# Restart the daemon to pick up the changes
+sudo systemctl restart nix-daemon
+```
+
+---
+
+## Appendix B: Booting a Raspberry Pi 4 into a NixOS Live Environment
+
+The Raspberry Pi 4 does not support `kexec`, so nixos-anywhere cannot take
+over a running non-NixOS system on it. The workaround is to boot the Pi from
+a NixOS SD card image first. Once it is running NixOS, nixos-anywhere detects
+this and skips the kexec step.
+
+### Hardware needed
+
+- Raspberry Pi 4 (any RAM variant)
+- 8 GB+ microSD card
+- microSD card reader
+- Ethernet cable (recommended for headless setup)
+- USB-C power supply for the Pi
+
+### Steps
+
+**1. Download the NixOS aarch64 SD card image**
+
+Go to Hydra and find the latest successful build (marked with a green
+checkmark):
+
+- [NixOS 25.11 aarch64 SD image](https://hydra.nixos.org/job/nixos/release-25.11/nixos.sd_image.aarch64-linux)
+
+Click the latest green build and copy the download link for the `.img.zst`
+file under build products.
+
+Or download from the command line:
+
+```bash
+nix-shell -p wget zstd
+wget <URL-from-Hydra>
+unzstd -d <filename>.img.zst
+```
+
+**2. Flash the image to the microSD card**
+
+Identify your SD card device:
+
+```bash
+lsblk
+```
+
+Flash the image (replace `/dev/sdX` with your SD card device):
+
+```bash
+sudo dd if=<image>.img of=/dev/sdX bs=4096 conv=fsync status=progress
+```
+
+Alternatively, use a graphical tool like [balenaEtcher](https://etcher.balena.io/).
+
+**3. Boot the Raspberry Pi**
+
+Insert the microSD card into the Pi, connect an ethernet cable, and power on.
+The Pi will boot into a NixOS live shell.
+
+**4. Enable SSH access**
+
+At the Pi's console (or headlessly via the steps below), switch to root and
+set up SSH access using the same steps as
+[Section 1.1](#11-nixos-live-iso-recommended-for-bare-metal-and-vms)
+(Option A or B).
+
+```bash
+sudo -i
+mkdir -p /root/.ssh
+cat <<EOF > /root/.ssh/authorized_keys
+ssh-ed25519 <YOUR-PUBLIC-KEY>
+EOF
+chmod 700 /root/.ssh
+chmod 600 /root/.ssh/authorized_keys
+systemctl start sshd
+ip addr show
+```
+
+Note the IP address. From your source machine:
+
+```bash
+ssh -o StrictHostKeyChecking=accept-new root@<TARGET-IP>
+```
+
+**5. Continue with the main guide**
+
+Proceed to [Section 2](#2-identify-the-target-disk) and follow the rest of
+the guide as normal.
+
+> **Note:** The Raspberry Pi 4 has two HDMI outputs. The boot messages may
+> appear on HDMI 0 while the login prompt appears on HDMI 1. If the screen
+> goes blank after boot, try the other HDMI port.
+
+> **Note:** For a fully headless setup, connect ethernet and let the Pi get a
+> DHCP address. Check your router's DHCP lease table to find the IP. The
+> NixOS SD image starts `sshd` automatically, but root has no password by
+> default — you will need to either set one at the console first, or build a
+> custom image with your SSH key baked in.
+
+---
+
 ## Reference
 
 | Resource | Link |
@@ -621,7 +861,10 @@ to date on its own schedule.
 | sops-nix repository | https://github.com/Mic92/sops-nix |
 | age repository | https://github.com/FiloSottile/age |
 | nixos-config repository | https://github.com/Smithoo4/nixos-config |
+| NixOS on ARM/Raspberry Pi 4 wiki | https://wiki.nixos.org/wiki/NixOS_on_ARM/Raspberry_Pi_4 |
+| NixOS ARM SD card images (Hydra) | https://wiki.nixos.org/wiki/NixOS_on_ARM/Installation |
+| nix.dev — Installing NixOS on a Raspberry Pi | https://nix.dev/tutorials/nixos/installing-nixos-on-a-raspberry-pi.html |
 
 ---
 
-**Version:** 1.3 | **Last Updated:** April 2026
+**Version:** 2.0 | **Last Updated:** April 2026
