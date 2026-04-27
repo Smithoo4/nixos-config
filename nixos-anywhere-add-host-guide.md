@@ -89,11 +89,18 @@ run `sudo` without a password.
 > ssh -o StrictHostKeyChecking=accept-new root@<TARGET-IP>
 > ```
 
-### 1.1 NixOS live ISO (recommended for bare metal and VMs)
+### 1.1 NixOS live environment (recommended)
 
-Boot the target from the [NixOS minimal ISO](https://nixos.org/download/#nixos-iso).
-At the live console, switch to root and either add your SSH public key or set
-a root password.
+Boot the target from the [NixOS minimal ISO](https://nixos.org/download/#nixos-iso)
+(for x86_64), or from a NixOS SD card image (for Raspberry Pi 4 — see
+[Appendix B](#appendix-b-booting-a-raspberry-pi-4-into-a-nixos-live-environment)).
+
+This is the universal approach and is **required** when the target does not
+support `kexec` (e.g. Raspberry Pi 4, or VPS providers that set
+`kexec_load_disabled=1`). When nixos-anywhere detects that the target is
+already running NixOS, it skips the kexec step entirely.
+
+At the live console, switch to root and set up SSH access:
 
 **Option A: Add your SSH public key (preferred)**
 
@@ -131,34 +138,12 @@ source machine, connect with:
 ssh root@<TARGET-IP>
 ```
 
-> **Note — kexec availability:**
-> kexec is not supported on all hardware. Known cases where it is unavailable:
->
-> - **Raspberry Pi 4** — kexec is explicitly unsupported
-> - **Some VPS/cloud providers** — `kexec_load_disabled=1` in the kernel
->
-> Check on the target with:
->
-> ```bash
-> cat /proc/sys/kernel/kexec_load_disabled
-> ```
->
-> `0` means kexec is enabled. `1` means disabled.
->
-> When kexec is unavailable, nixos-anywhere **cannot take over a running
-> non-NixOS system**. The workaround is to boot the target into a **NixOS
-> live environment first** (SD card image, USB, or ISO). Once the target is
-> already running NixOS, nixos-anywhere detects this and skips the kexec step.
->
-> For Raspberry Pi 4 specifically, see
-> [Appendix B](#appendix-b-booting-a-raspberry-pi-4-into-a-nixos-live-environment).
-
-### 1.2 Already Running Linux (recommended for VPS or cloud instance)
+### 1.2 Already running Linux with kexec (VPS / cloud instances)
 
 Most providers give you root SSH access by default, or let you inject an SSH
-public key at provisioning time. If the instance is running a generic Linux
+public key at provisioning time. If the target is running a generic Linux
 distro with `kexec` support, nixos-anywhere can take over without booting from
-an ISO. It loads a NixOS environment into memory via `kexec` first.
+an ISO — it loads a NixOS environment into memory via `kexec` first.
 
 Confirm `kexec` is available on the target:
 
@@ -166,9 +151,9 @@ Confirm `kexec` is available on the target:
 cat /proc/sys/kernel/kexec_load_disabled
 ```
 
-If the output is `0`, kexec is enabled and you can proceed. If it is `1`,
-boot from a NixOS live environment instead (see
-[Section 1.1](#11-nixos-live-iso-recommended-for-bare-metal-and-vms)).
+`0` means kexec is enabled — proceed with the install. `1` means kexec is
+disabled — boot from a NixOS live environment instead
+([Section 1.1](#11-nixos-live-environment-recommended)).
 
 ### 1.3 Non-root user with passwordless sudo
 
@@ -330,11 +315,11 @@ For a standard UEFI server:
     ./hardware-configuration.nix
     ./disko.nix
 
-    # Users — imported at the flake level via mkHost, not needed here
+    # Users
+    # "${self}/users/…"
 
-    # Services (uncomment and add as needed)
-    # "${self}/modules/reverse-proxy-caddy"
-    # "${self}/modules/reverse-proxy-nginx"
+    # Services
+    # "${self}/modules/…"
   ];
 
   # Set once at install time. Do NOT change after first boot.
@@ -356,8 +341,8 @@ For more complex layouts (RAID, LVM, ZFS, multiple disks), see the
 [Disko examples](https://github.com/nix-community/disko/tree/master/example).
 
 The example below is a simple GPT layout with a 512 MB EFI partition and an
-ext4 root that fills the remainder of the disk, the same layout used by
-`oneohm`. Use the disk path you identified in [Section 2](#2-identify-the-target-disk).
+ext4 root that fills the remainder of the disk. Use the disk path you
+identified in [Section 2](#2-identify-the-target-disk).
 
 Create `hosts/<hostname>/disko.nix`:
 
@@ -423,9 +408,9 @@ Generate the key on your source machine and stage it in a temporary directory.
 nixos-anywhere will copy this directory tree onto the new system before rebooting.
 
 ```bash
-mkdir -p /tmp/<hostname>-extra/var/lib/sops-nix
-age-keygen -o /tmp/<hostname>-extra/var/lib/sops-nix/key.txt
-chmod 600 /tmp/<hostname>-extra/var/lib/sops-nix/key.txt
+mkdir -p /tmp/extra/var/lib/sops-nix
+age-keygen -o /tmp/extra/var/lib/sops-nix/key.txt
+chmod 600 /tmp/extra/var/lib/sops-nix/key.txt
 ```
 
 `age-keygen` prints the public key to the terminal when it runs. Copy the
@@ -433,10 +418,10 @@ value shown on the `Public key:` line. You will paste it into `.sops.yaml`
 in the next step.
 
 > **WARNING:**
-> The private key at `/tmp/<hostname>-extra/var/lib/sops-nix/key.txt` is the
+> The private key at `/tmp/extra/var/lib/sops-nix/key.txt` is the
 > only copy. If you lose it before the system boots, the host will be unable to
 > decrypt its secrets and you will need to start this process over. Do not
-> delete `/tmp/<hostname>-extra` until after the install is confirmed working.
+> delete `/tmp/extra` until after the install is confirmed working.
 
 ---
 
@@ -521,9 +506,13 @@ nix run github:nix-community/nixos-anywhere -- \
   --flake github:Smithoo4/nixos-config#<hostname> \
   --generate-hardware-config nixos-generate-config \
     hosts/<hostname>/hardware-configuration.nix \
-  --extra-files /tmp/<hostname>-extra \
+  --extra-files /tmp/extra \
   root@<TARGET-IP>
 ```
+
+> **Note:** If SSH'ing as a non-root user with passwordless sudo, replace
+> `root@<TARGET-IP>` with `<user>@<TARGET-IP>`. nixos-anywhere auto-detects
+> `sudo` and `doas` on the target (since ~v1.8+).
 
 ### 8.2 Build on the target (`--build-on-remote`)
 
@@ -537,7 +526,7 @@ nix run github:nix-community/nixos-anywhere -- \
   --flake github:Smithoo4/nixos-config#<hostname> \
   --generate-hardware-config nixos-generate-config \
     hosts/<hostname>/hardware-configuration.nix \
-  --extra-files /tmp/<hostname>-extra \
+  --extra-files /tmp/extra \
   --build-on-remote \
   root@<TARGET-IP>
 ```
@@ -554,24 +543,7 @@ nix run github:nix-community/nixos-anywhere -- \
 > `x86_64` source), you need binfmt configured on your source machine. See
 > [Appendix A](#appendix-a-setting-up-binfmt-for-cross-architecture-builds).
 
-### 8.3 Non-root SSH user
-
-If you are SSH'ing as a non-root user with passwordless sudo, replace
-`root@<TARGET-IP>` with `<user>@<TARGET-IP>`:
-
-```bash
-nix run github:nix-community/nixos-anywhere -- \
-  --flake github:Smithoo4/nixos-config#<hostname> \
-  --generate-hardware-config nixos-generate-config \
-    hosts/<hostname>/hardware-configuration.nix \
-  --extra-files /tmp/<hostname>-extra \
-  <user>@<TARGET-IP>
-```
-
-> **Note:** nixos-anywhere auto-detects `sudo` and `doas` on the target
-> (since ~v1.8+). You do not need to pass a `--sudo` flag.
-
-### 8.4 What the install does, step by step
+### 8.3 What the install does, step by step
 
 1. nixos-anywhere SSH's into `<TARGET-IP>` as root.
 2. If the target is not already running NixOS, it streams a NixOS environment
@@ -579,7 +551,7 @@ nix run github:nix-community/nixos-anywhere -- \
    over SSH throughout.
 3. It evaluates `github:Smithoo4/nixos-config#<hostname>` and runs Disko to
    partition and format the disk as declared in `disko.nix`.
-4. It copies the contents of `/tmp/<hostname>-extra` onto the new system,
+4. It copies the contents of `/tmp/extra` onto the new system,
    placing the age private key at `/var/lib/sops-nix/key.txt` before
    first boot.
 5. `--generate-hardware-config` runs `nixos-generate-config` on the target,
@@ -637,7 +609,19 @@ sudo ls /run/secrets/
 You should see the secrets listed in your configuration (e.g.
 `smithoo4-password`, `smithoo4-ssh-key`).
 
-When you are done, exit back to your source machine before continuing:
+Run a manual rebuild to confirm the host can pull and apply its configuration
+from GitHub:
+
+```bash
+sudo nixos-rebuild switch --flake github:Smithoo4/nixos-config#<hostname> --refresh
+```
+
+The `--refresh` flag forces Nix to check GitHub for the latest version of the
+flake rather than using a cached copy. If the rebuild completes successfully,
+the auto-upgrade module is wired up correctly and the host will keep itself up
+to date on its own schedule.
+
+When you are done, exit back to your source machine:
 
 ```bash
 exit
@@ -662,36 +646,18 @@ git push
 
 ### 9.4 Clean up the temporary age key
 
-The private key in `/tmp/<hostname>-extra` is no longer needed. It was copied
+The private key in `/tmp/extra` is no longer needed. It was copied
 onto the target during the nixos-anywhere run. Delete it from your source
 machine:
 
 ```bash
-rm -rf /tmp/<hostname>-extra
+rm -rf /tmp/extra
 ```
 
 > **WARNING:**
 > The canonical copy of the host's private key now lives only on the target at
 > `/var/lib/sops-nix/key.txt`. If you ever wipe the target, you will need to
 > repeat Section 5 and Section 6 to generate a new key and re-encrypt secrets.
-
-### 9.5 Verify the auto-upgrade configuration
-
-SSH back into the new host and run a rebuild manually to confirm the host can
-pull and apply its configuration from GitHub:
-
-```bash
-ssh smithoo4@<TARGET-IP>
-```
-
-```bash
-sudo nixos-rebuild switch --flake github:Smithoo4/nixos-config#<hostname> --refresh
-```
-
-The `--refresh` flag forces Nix to check GitHub for the latest version of the
-flake rather than using a cached copy. If the rebuild completes successfully,
-the auto-upgrade module is wired up correctly and the host will keep itself up
-to date on its own schedule.
 
 ---
 
@@ -812,7 +778,7 @@ The Pi will boot into a NixOS live shell.
 
 At the Pi's console (or headlessly via the steps below), switch to root and
 set up SSH access using the same steps as
-[Section 1.1](#11-nixos-live-iso-recommended-for-bare-metal-and-vms)
+[Section 1.1](#11-nixos-live-environment-recommended)
 (Option A or B).
 
 ```bash
@@ -867,4 +833,4 @@ the guide as normal.
 
 ---
 
-**Version:** 2.0 | **Last Updated:** April 2026
+**Version:** 2.1 | **Last Updated:** April 2026
