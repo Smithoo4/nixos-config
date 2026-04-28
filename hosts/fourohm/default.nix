@@ -7,14 +7,14 @@
 
   imports = [
 
-     # Hardware
+    # Hardware
     ./hardware-configuration.nix
     ./disko.nix
 
     # Users
 
     # Services
-    "${self}/modules/reverse-proxy-nginx"
+    # "${self}/modules/reverse-proxy-nginx"
 
   ];
 
