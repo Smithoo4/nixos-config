@@ -1,7 +1,7 @@
 keys:
   - &admin age1v492u0esm92zy34e33xd9m7z4jt3v03j233ar75k5m7s0rlxes0sxadr2t
   - &oneohm age1mazttzsgw0eqp5c4mmkm75v07wu7nl07gt0z64qgwe2yzdk8jueq0yys3l
-  - &fourohm age10nssm3mgy27k7dcd6xz58qyasm340v8zvr3ml287xkjc4nnug4nsqvwfsf
+  - &fourohm age18qm7jz373yemv9g94u2cfnhg6snrcq299280sgmfn5tuufm685zslheavl
 
 creation_rules:
   - path_regex: secrets/.*\.yaml$

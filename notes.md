@@ -1,0 +1,1 @@
+- Move the note "Note: The first time you SSH into the target, you will be prompted to accept its host fingerprint. Since the live ISO (or VPS rescue image) is a throwaway environment, you can safely accept it." To the end of section 1.1 around ssh root@<TARGET-IP>. In fact replace ssh root@<TARGET-IP> with ssh -o StrictHostKeyChecking=accept-new root@<TARGET-IP>.
