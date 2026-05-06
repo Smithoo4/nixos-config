@@ -1,4 +1,0 @@
-- Move the note "Note: The first time you SSH into the target, you will be prompted to accept its host fingerprint. Since the live ISO (or VPS rescue image) is a throwaway environment, you can safely accept it." To the end of section 1.1 around ssh root@<TARGET-IP>. In fact replace ssh root@<TARGET-IP> with ssh -o StrictHostKeyChecking=accept-new root@<TARGET-IP>.
-- In Appendix A the directions for Fedora and Ubuntu are very similar, I think you could do one step for Non-Nixos in general and just call out the different packager manager commands.
-- Add another appendix for recommend default.nix and disko.nix files for a host running on a Raspberry Pi 4. Just a base install (e.g. no services or added users) and pick a filesystems that would good for a SD card maybe f2fs. 
-- Version bumped to 2.2
