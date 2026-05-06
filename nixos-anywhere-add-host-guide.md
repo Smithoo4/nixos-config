@@ -71,7 +71,6 @@ reachable over SSH from the source machine and must be running one of:
 **Appendices**
 
 - [Appendix A: Setting Up binfmt for Cross-Architecture Builds](#appendix-a-setting-up-binfmt-for-cross-architecture-builds)
-- [Appendix B: Booting a Raspberry Pi 4 into a NixOS Live Environment](#appendix-b-booting-a-raspberry-pi-4-into-a-nixos-live-environment)
 
 ---
 
@@ -80,24 +79,13 @@ reachable over SSH from the source machine and must be running one of:
 nixos-anywhere needs SSH access to the target as `root`, or as a user who can
 run `sudo` without a password.
 
-> **Note:** The first time you SSH into the target, you will be prompted to
-> accept its host fingerprint. Since the live ISO (or VPS rescue image) is a
-> throwaway environment, you can safely accept it. To skip the interactive
-> prompt, use:
->
-> ```bash
-> ssh -o StrictHostKeyChecking=accept-new root@<TARGET-IP>
-> ```
-
 ### 1.1 NixOS live environment (recommended)
 
 Boot the target from the [NixOS minimal ISO](https://nixos.org/download/#nixos-iso)
-(for x86_64), or from a NixOS SD card image (for Raspberry Pi 4 — see
-[Appendix B](#appendix-b-booting-a-raspberry-pi-4-into-a-nixos-live-environment)).
+(for x86_64), or from a NixOS SD card image (for Raspberry Pi 4).
 
 This is the universal approach and is **required** when the target does not
-support `kexec` (e.g. Raspberry Pi 4, or VPS providers that set
-`kexec_load_disabled=1`). When nixos-anywhere detects that the target is
+support `kexec` (e.g. Raspberry Pi 4). When nixos-anywhere detects that the target is
 already running NixOS, it skips the kexec step entirely.
 
 At the live console, switch to root and set up SSH access:
@@ -135,8 +123,12 @@ Enter a temporary password when prompted. Note the IP address. On your
 source machine, connect with:
 
 ```bash
-ssh root@<TARGET-IP>
+ssh -o StrictHostKeyChecking=accept-new root@<TARGET-IP>
 ```
+
+> **Note:** The live ISO (or SD card image) is a throwaway environment. It is
+> safe to automatically accept the SSH host fingerprint with
+> `StrictHostKeyChecking=accept-new`.
 
 ### 1.2 Already running Linux with kexec (VPS / cloud instances)
 
@@ -155,7 +147,7 @@ cat /proc/sys/kernel/kexec_load_disabled
 disabled — boot from a NixOS live environment instead
 ([Section 1.1](#11-nixos-live-environment-recommended)).
 
-### 1.3 Non-root user with passwordless sudo
+**Non-root user with passwordless sudo**
 
 If you can only SSH in as a non-root user, that user must be able to run
 `sudo` without a password prompt. On NixOS:
@@ -535,8 +527,8 @@ nix run github:nix-community/nixos-anywhere -- \
 
 | Target | Target RAM | Recommendation | Why |
 |---|---|---|---|
-| x86_64 VM (oneohm, fourohm) | varies | Default (build locally) | Same arch as source — no cross-compilation needed |
-| Raspberry Pi 4 (twoohm) | 2 GB | Default + binfmt on source | 2 GB can't handle building in RAM — will OOM |
+| x86_64 VM | varies | Default (build locally) | Same arch as source — no cross-compilation needed |
+| Raspberry Pi 4 | 2 GB | Default + binfmt on source | 2 GB can't handle building in RAM — will OOM |
 | Oracle ARM VM | 24 GB | `--build-on-remote` | Plenty of resources, avoids binfmt setup |
 
 > **Note:** For cross-architecture builds (e.g. building `aarch64` from an
@@ -567,7 +559,24 @@ nix run github:nix-community/nixos-anywhere -- \
 
 ## 9. Post-Install Checks and Cleanup
 
-### 9.1 SSH into the new host
+### 9.1 Commit the generated hardware configuration
+
+nixos-anywhere wrote the real `hardware-configuration.nix` back to your source
+machine. Commit it now so the repo reflects the actual hardware:
+
+```bash
+# Back on your source machine
+cd ~/nixos-config
+git add hosts/<hostname>/hardware-configuration.nix
+git commit -m "hosts/<hostname>: add generated hardware-configuration"
+git push
+```
+
+> **Note:** The auto-upgrade module (`modules/common/auto-upgrade.nix`) pulls
+> from GitHub on a schedule. Committing the hardware configuration ensures the
+> next automatic upgrade uses the correct file.
+
+### 9.2 SSH into the new host
 
 The SSH host key changed during the install. Remove the old known-hosts entry
 before connecting:
@@ -586,7 +595,7 @@ Your SSH key should authenticate automatically with no password prompt. This
 works because your authorized key is declared in `users/smithoo4/default.nix`
 and was deployed as part of the install.
 
-### 9.2 Verify the system is healthy
+### 9.3 Verify the system is healthy
 
 Check that all services started cleanly:
 
@@ -627,23 +636,6 @@ When you are done, exit back to your source machine:
 exit
 ```
 
-### 9.3 Commit the generated hardware configuration
-
-nixos-anywhere wrote the real `hardware-configuration.nix` back to your source
-machine. Commit it now so the repo reflects the actual hardware:
-
-```bash
-# Back on your source machine
-cd ~/nixos-config
-git add hosts/<hostname>/hardware-configuration.nix
-git commit -m "hosts/<hostname>: add generated hardware-configuration"
-git push
-```
-
-> **Note:** The auto-upgrade module (`modules/common/auto-upgrade.nix`) pulls
-> from GitHub on a schedule. Committing the hardware configuration ensures the
-> next automatic upgrade uses the correct file.
-
 ### 9.4 Clean up the temporary age key
 
 The private key in `/tmp/extra` is no longer needed. It was copied
@@ -668,12 +660,23 @@ binfmt + QEMU to emulate the target architecture. Most packages come from
 the Hydra binary cache, so actual emulated builds are rare — but binfmt must
 be registered so Nix knows it *can* build `aarch64`.
 
-### Fedora (with Nix installed)
+### Non-NixOS Linux (Fedora, Ubuntu, etc.)
+
+Install QEMU user emulation:
+
+- **Fedora:**
+  ```bash
+  sudo dnf install qemu-user-static
+  ```
+- **Ubuntu / Debian:**
+  ```bash
+  sudo apt update
+  sudo apt install qemu-user-static
+  ```
+
+Then run the following common steps:
 
 ```bash
-# Install QEMU user-static
-sudo dnf install qemu-user-static
-
 # Verify aarch64 is registered
 ls /proc/sys/fs/binfmt_misc/qemu-aarch64
 
@@ -697,123 +700,6 @@ boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
 Rebuild and you're done. The NixOS module handles QEMU registration
 automatically.
 
-### Ubuntu 24.04 LTS (with Nix installed)
-
-```bash
-# Install QEMU user-static and binfmt support
-sudo apt update
-sudo apt install qemu-user-static
-
-# Verify aarch64 is registered
-ls /proc/sys/fs/binfmt_misc/qemu-aarch64
-
-# Tell the Nix daemon it can build aarch64
-mkdir -p ~/.config/nix
-echo "extra-platforms = aarch64-linux" >> ~/.config/nix/nix.conf
-echo "extra-sandbox-paths = /usr/bin/qemu-aarch64-static" >> ~/.config/nix/nix.conf
-
-# Restart the daemon to pick up the changes
-sudo systemctl restart nix-daemon
-```
-
----
-
-## Appendix B: Booting a Raspberry Pi 4 into a NixOS Live Environment
-
-The Raspberry Pi 4 does not support `kexec`, so nixos-anywhere cannot take
-over a running non-NixOS system on it. The workaround is to boot the Pi from
-a NixOS SD card image first. Once it is running NixOS, nixos-anywhere detects
-this and skips the kexec step.
-
-### Hardware needed
-
-- Raspberry Pi 4 (any RAM variant)
-- 8 GB+ microSD card
-- microSD card reader
-- Ethernet cable (recommended for headless setup)
-- USB-C power supply for the Pi
-
-### Steps
-
-**1. Download the NixOS aarch64 SD card image**
-
-Go to Hydra and find the latest successful build (marked with a green
-checkmark):
-
-- [NixOS 25.11 aarch64 SD image](https://hydra.nixos.org/job/nixos/release-25.11/nixos.sd_image.aarch64-linux)
-
-Click the latest green build and copy the download link for the `.img.zst`
-file under build products.
-
-Or download from the command line:
-
-```bash
-nix-shell -p wget zstd
-wget <URL-from-Hydra>
-unzstd -d <filename>.img.zst
-```
-
-**2. Flash the image to the microSD card**
-
-Identify your SD card device:
-
-```bash
-lsblk
-```
-
-Flash the image (replace `/dev/sdX` with your SD card device):
-
-```bash
-sudo dd if=<image>.img of=/dev/sdX bs=4096 conv=fsync status=progress
-```
-
-Alternatively, use a graphical tool like [balenaEtcher](https://etcher.balena.io/).
-
-**3. Boot the Raspberry Pi**
-
-Insert the microSD card into the Pi, connect an ethernet cable, and power on.
-The Pi will boot into a NixOS live shell.
-
-**4. Enable SSH access**
-
-At the Pi's console (or headlessly via the steps below), switch to root and
-set up SSH access using the same steps as
-[Section 1.1](#11-nixos-live-environment-recommended)
-(Option A or B).
-
-```bash
-sudo -i
-mkdir -p /root/.ssh
-cat <<EOF > /root/.ssh/authorized_keys
-ssh-ed25519 <YOUR-PUBLIC-KEY>
-EOF
-chmod 700 /root/.ssh
-chmod 600 /root/.ssh/authorized_keys
-systemctl start sshd
-ip addr show
-```
-
-Note the IP address. From your source machine:
-
-```bash
-ssh -o StrictHostKeyChecking=accept-new root@<TARGET-IP>
-```
-
-**5. Continue with the main guide**
-
-Proceed to [Section 2](#2-identify-the-target-disk) and follow the rest of
-the guide as normal.
-
-> **Note:** The Raspberry Pi 4 has two HDMI outputs. The boot messages may
-> appear on HDMI 0 while the login prompt appears on HDMI 1. If the screen
-> goes blank after boot, try the other HDMI port.
-
-> **Note:** For a fully headless setup, connect ethernet and let the Pi get a
-> DHCP address. Check your router's DHCP lease table to find the IP. The
-> NixOS SD image starts `sshd` automatically, but root has no password by
-> default — you will need to either set one at the console first, or build a
-> custom image with your SSH key baked in.
-
 ---
 
 ## Reference
@@ -827,10 +713,7 @@ the guide as normal.
 | sops-nix repository | https://github.com/Mic92/sops-nix |
 | age repository | https://github.com/FiloSottile/age |
 | nixos-config repository | https://github.com/Smithoo4/nixos-config |
-| NixOS on ARM/Raspberry Pi 4 wiki | https://wiki.nixos.org/wiki/NixOS_on_ARM/Raspberry_Pi_4 |
-| NixOS ARM SD card images (Hydra) | https://wiki.nixos.org/wiki/NixOS_on_ARM/Installation |
-| nix.dev — Installing NixOS on a Raspberry Pi | https://nix.dev/tutorials/nixos/installing-nixos-on-a-raspberry-pi.html |
 
 ---
 
-**Version:** 2.1 | **Last Updated:** April 2026
+**Version:** 2.4 | **Last Updated:** April 2026
