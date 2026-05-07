@@ -48,7 +48,7 @@
 
 {
   # Sops secrets
-  sops.secrets.duckdns-token = {};
+  sops.secrets.duckdns-token = { };
   sops.templates."acme-duckdns-env" = {
     content = ''
       DUCKDNS_TOKEN=${config.sops.placeholder.duckdns-token}
@@ -60,8 +60,8 @@
     acceptTerms = true;
     defaults = {
       email = "smith_oo4@shaw.ca";
-      # Staging for testing — comment out for production
-      #server = "https://acme-staging-v02.api.letsencrypt.org/directory";
+      #Staging for testing — comment out for production
+      server = "https://acme-staging-v02.api.letsencrypt.org/directory";
       dnsProvider = "duckdns";
       environmentFile = config.sops.templates."acme-duckdns-env".path;
     };
@@ -106,12 +106,6 @@ in
 # │  REFERENCE ONLY — This file is NOT imported in default.nix.    │
 # │  Copy and adapt for new services.                              │
 # └─────────────────────────────────────────────────────────────────┘
-#
-# To use:
-#   1. Copy this file or use it as a template for your service module
-#   2. Import the new file in the appropriate host's default.nix
-#   3. Create a DuckDNS DNS record for the new subdomain
-#   4. Rebuild: sudo nixos-rebuild switch --flake .#<hostname>
 
 { config, ... }:
 
@@ -151,7 +145,12 @@ in
 }
 
 --- ./modules/reverse-proxy-caddy/caddy.nix ---
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 let
   # Plugins
@@ -162,7 +161,7 @@ let
 in
 {
   # Secrets
-  sops.secrets.duckdns-token = {};
+  sops.secrets.duckdns-token = { };
   sops.templates."caddy-env" = {
     content = ''
       DUCKDNS_TOKEN=${config.sops.placeholder.duckdns-token}
@@ -175,7 +174,7 @@ in
     package = customCaddy;
 
     email = "smith_oo4@shaw.ca";
-    #acmeCA = "https://acme-staging-v02.api.letsencrypt.org/directory";  # staging for testing
+    acmeCA = "https://acme-staging-v02.api.letsencrypt.org/directory"; # staging for testing
 
     globalConfig = ''
       # ACME using DuckDNS DNS-01 challenge
@@ -183,35 +182,38 @@ in
       # SNI enforcement
       servers {
         strict_sni_host on
-      }      
+      }
     '';
 
     extraConfig = ''
-    (security) {
-      tls {
-        curves x25519 secp256r1 secp384r1
-        protocols tls1.3
+      (security) {
+        tls {
+          curves x25519 secp256r1 secp384r1
+          protocols tls1.3
+        }
+        header {
+          Strict-Transport-Security "max-age=31536000; includeSubDomains"
+          X-Frame-Options "DENY"
+          X-Content-Type-Options "nosniff"
+          Referrer-Policy "strict-origin-when-cross-origin"
+          # Override Permissions-Policy per virtualhost for services needing camera/microphone
+          Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+        }
       }
-      header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
-        X-Frame-Options "DENY"
-        X-Content-Type-Options "nosniff"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        # Override Permissions-Policy per virtualhost for services needing camera/microphone
-        Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
-      }
-    }
     '';
     #openFirewall = true;  # not available in 25.11 - enable when stable on your channel
   };
 
-   # Catch-all Blocks
-   services.caddy.virtualHosts.":443".extraConfig = "abort";
-   services.caddy.virtualHosts.":80".extraConfig = "abort";
-   
-   # FireWall
-   networking.firewall.allowedTCPPorts = [ 80 443 ];
-   networking.firewall.allowedUDPPorts = [ 443 ];
+  # Catch-all Blocks
+  services.caddy.virtualHosts.":443".extraConfig = "abort";
+  services.caddy.virtualHosts.":80".extraConfig = "abort";
+
+  # FireWall
+  networking.firewall.allowedTCPPorts = [
+    80
+    443
+  ];
+  networking.firewall.allowedUDPPorts = [ 443 ];
 }
 
 --- ./modules/reverse-proxy-caddy/testPage.nix ---
@@ -243,12 +245,6 @@ in
 # │  REFERENCE ONLY — This file is NOT imported in default.nix.    │
 # │  Copy and adapt for new services.                              │
 # └─────────────────────────────────────────────────────────────────┘
-#
-# To use:
-#   1. Copy this file or use it as a template for your service module
-#   2. Import the new file in the appropriate host's default.nix
-#   3. Create a DuckDNS DNS record for the new subdomain
-#   4. Rebuild: sudo nixos-rebuild switch --flake .#<hostname>
 
 { config, ... }:
 
@@ -579,14 +575,14 @@ in
 
   imports = [
 
-     # Hardware
+    # Hardware
     ./hardware-configuration.nix
     ./disko.nix
 
     # Users
 
     # Services
-    "${self}/modules/reverse-proxy-nginx"
+    # "${self}/modules/reverse-proxy-nginx"
 
   ];
 
@@ -610,13 +606,6 @@ in
   boot.kernelModules = [ "kvm-intel" ];
   boot.extraModulePackages = [ ];
 
-  # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
-  # (the default) this is the recommended approach. When using systemd-networkd it's
-  # still possible to use this option, but it's recommended to use it in conjunction
-  # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
-  networking.useDHCP = lib.mkDefault true;
-  # networking.interfaces.enp1s0.useDHCP = lib.mkDefault true;
-
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 }
 
@@ -626,7 +615,7 @@ in
   disko.devices = {
     disk = {
       main = {
-        device = "/dev/vda";
+        device = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_incus_root";
         type = "disk";
         content = {
           type = "gpt";
@@ -647,7 +636,10 @@ in
                 type = "filesystem";
                 format = "ext4";
                 mountpoint = "/";
-                mountOptions = [ "defaults" "noatime" ];
+                mountOptions = [
+                  "defaults"
+                  "noatime"
+                ];
               };
             };
           };
@@ -667,16 +659,16 @@ in
 
   imports = [
 
-     # Hardware
+    # Hardware
     ./hardware-configuration.nix
     ./disko.nix
 
     # Users
 
     # Services
-    "${self}/modules/reverse-proxy-caddy"
+    #"${self}/modules/reverse-proxy-caddy"
 
-    ];
+  ];
 
   # Set once at install time. Do NOT change after first boot.
   system.stateVersion = "25.11";
@@ -693,10 +685,17 @@ in
     [ (modulesPath + "/profiles/qemu-guest.nix")
     ];
 
-  boot.initrd.availableKernelModules = [ "ahci" "xhci_pci" "virtio_pci" "sr_mod" "virtio_blk" ];
+  boot.initrd.availableKernelModules = [ "ahci" "xhci_pci" "virtio_pci" "virtio_scsi" "sd_mod" ];
   boot.initrd.kernelModules = [ ];
   boot.kernelModules = [ "kvm-intel" ];
   boot.extraModulePackages = [ ];
+
+  # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
+  # (the default) this is the recommended approach. When using systemd-networkd it's
+  # still possible to use this option, but it's recommended to use it in conjunction
+  # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
+  networking.useDHCP = lib.mkDefault true;
+  # networking.interfaces.enp5s0.useDHCP = lib.mkDefault true;
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 }
