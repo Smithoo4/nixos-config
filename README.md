@@ -11,7 +11,7 @@ Active Development — currently being refined, expanded, and tested.
 ## Hosts
 
 | Host | Status | Hardware | Purpose |
-| :--- | :--- | :--- | : --- |
+| :--- | :--- | :--- | :--- |
 | **oneohm** | Active Development | VM | Testing and development |
 | **twoohm** | Planned | Raspberry Pi 4 | Testing and development |
 | **threeohm** | Planned | TBD | TBD |
