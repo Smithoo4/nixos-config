@@ -506,7 +506,7 @@ nix run github:nix-community/nixos-anywhere -- \
 > `root@<TARGET-IP>` with `<user>@<TARGET-IP>`. nixos-anywhere auto-detects
 > `sudo` and `doas` on the target (since ~v1.8+).
 
-### 8.2 Build on the target (`--build-on-remote`)
+### 8.2 Build on the target (`--build-on remote`)
 
 If the target has plenty of RAM and you want to avoid cross-compilation or
 binfmt setup, you can build directly on the target. During the install, the
@@ -519,7 +519,7 @@ nix run github:nix-community/nixos-anywhere -- \
   --generate-hardware-config nixos-generate-config \
     hosts/<hostname>/hardware-configuration.nix \
   --extra-files /tmp/extra \
-  --build-on-remote \
+  --build-on remote \
   root@<TARGET-IP>
 ```
 
@@ -529,7 +529,7 @@ nix run github:nix-community/nixos-anywhere -- \
 |---|---|---|---|
 | x86_64 VM | varies | Default (build locally) | Same arch as source — no cross-compilation needed |
 | Raspberry Pi 4 | 2 GB | Default + binfmt on source | 2 GB can't handle building in RAM — will OOM |
-| Oracle ARM VM | 24 GB | `--build-on-remote` | Plenty of resources, avoids binfmt setup |
+| Oracle ARM VM | 24 GB | `--build-on remote` | Plenty of resources, avoids binfmt setup |
 
 > **Note:** For cross-architecture builds (e.g. building `aarch64` from an
 > `x86_64` source), you need binfmt configured on your source machine. See
