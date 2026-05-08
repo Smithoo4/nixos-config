@@ -10,12 +10,12 @@ Active Development — currently being refined, expanded, and tested.
 
 ## Hosts
 
-| Host | Status | Purpose |
-| :--- | :--- | :--- |
-| **oneohm** | Active Development | Testing and development |
-| **twoohm** | Planned | TBD |
-| **threeohm** | Planned | TBD |
-| **fourohm** | Active Development | Testing and development |
+| Host | Status | Hardware | Purpose |
+| :--- | :--- | :--- | : --- |
+| **oneohm** | Active Development | VM | Testing and development |
+| **twoohm** | Planned | Raspberry Pi 4 | Testing and development |
+| **threeohm** | Planned | TBD | TBD |
+| **fourohm** | Active Development | VM | Testing and development |
 
 ---
 
@@ -29,7 +29,6 @@ Active Development — currently being refined, expanded, and tested.
 - [x] Refactor configuration for modular, multi-host support
 - [x] msmtp setup
 - [x] S.M.A.R.T disk monitoring with email notifications via `smartd`
- - Enable on physical hosts via `"${self}/modules/smartd.nix"` in host `default.nix`
 - [X] Automatic updates
     - [X] Central `flake.lock` update for all hosts vis [update-flake-lock](https://github.com/DeterminateSystems/update-flake-lock)
     - [X] Schedule auto updates
@@ -56,16 +55,8 @@ Active Development — currently being refined, expanded, and tested.
 *Decision: Continue testing both, with Nginx as the standard.*  
 
 Caddy's custom DuckDNS plugin build adds compile-time friction, especially on low-power ARM hosts. Nginx offers equivalent features with the mature, pre-built `lego` ACME client and better NixOS integration. Both will continue running on separate hosts during early service deployments to compare real-world behavior before full fleet commitment.
-  
-### Phase 3: Deployment & Documentation
-- [X] Store configuration exclusively in GitHub (no local persistence)
-- [ ] Comprehensive deployment tutorial
-    - [X] Install second host (`fourohm`) pulling config from GitHub
-    - [X] Evaluate [nixos-anywhere](https://github.com/nix-community/nixos-anywhere)
-    - [ ] Cover installing on raspberry pi 4
-    - [ ] Cover installing on an oracle arm VPS
 
-## Phase 4: Security
+## Phase 3: Security
 - [ ] Set up [CrowdSec](https://www.crowdsec.net/) — *on hold, NixOS module has known issues ([nixpkgs#446307](https://github.com/NixOS/nixpkgs/pull/446307))*
     - [ ] SSH protection
     - [ ] Caddy protection
@@ -82,6 +73,14 @@ Caddy's custom DuckDNS plugin build adds compile-time friction, especially on lo
         - [ ] Block repeated requests that don't match an FQDN (IP-only / unknown SNI)
 
 &gt; **Note:** Not all evaluated tools will necessarily be implemented. Items are tracked for comparison and may be dropped based on findings.
+  
+### Phase 4: Deployment & Documentation
+- [X] Store configuration exclusively in GitHub (no local persistence)
+- [ ] Comprehensive deployment tutorial
+    - [X] Install second host (`fourohm`) pulling config from GitHub
+    - [X] Evaluate [nixos-anywhere](https://github.com/nix-community/nixos-anywhere)
+    - [ ] Cover installing on raspberry pi 4
+    - [ ] Cover installing on an oracle arm VPS
 
 ### Phase 5: Ideas & Modular Exploration (Optional)
  - [ ] Evaluate Dynamic DNS using another provider

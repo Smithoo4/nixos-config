@@ -531,7 +531,7 @@ in
   disko.devices = {
     disk = {
       main = {
-        device = "/dev/vda";
+        device = "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_incus_root";
         type = "disk";
         content = {
           type = "gpt";
@@ -601,12 +601,105 @@ in
     [ (modulesPath + "/profiles/qemu-guest.nix")
     ];
 
-  boot.initrd.availableKernelModules = [ "ahci" "xhci_pci" "virtio_pci" "sr_mod" "virtio_blk" ];
+  boot.initrd.availableKernelModules = [ "ahci" "xhci_pci" "virtio_pci" "virtio_scsi" "sd_mod" ];
   boot.initrd.kernelModules = [ ];
   boot.kernelModules = [ "kvm-intel" ];
   boot.extraModulePackages = [ ];
 
+  # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
+  # (the default) this is the recommended approach. When using systemd-networkd it's
+  # still possible to use this option, but it's recommended to use it in conjunction
+  # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
+  networking.useDHCP = lib.mkDefault true;
+  # networking.interfaces.enp5s0.useDHCP = lib.mkDefault true;
+
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+}
+
+--- ./hosts/twoohm/disko.nix ---
+{
+  disko.devices = {
+    disk = {
+      main = {
+        device = "/dev/mmcblk0";
+        type = "disk";
+        content = {
+          type = "gpt";
+          partitions = {
+            boot = {
+              type = "EF00";
+              size = "512M";
+              content = {
+                type = "filesystem";
+                format = "vfat";
+                mountpoint = "/boot";
+                mountOptions = [ "umask=0077" ];
+              };
+            };
+            root = {
+              size = "100%";
+              content = {
+                type = "filesystem";
+                format = "f2fs";
+                mountpoint = "/";
+                extraArgs = [
+                  "-O"
+                  "extra_attr,inode_checksum,sb_checksum,compression"
+                ];
+                mountOptions = [
+                  "defaults"
+                  "noatime"
+                  "compress_algorithm=zstd"
+                  "compress_chksum"
+                  "atgc"
+                  "gc_merge"
+                ];
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}
+
+--- ./hosts/twoohm/default.nix ---
+{ self, inputs, ... }:
+{
+
+  ## Bootloader (RPi4 — extlinux)
+  boot.loader.grub.enable = false;
+  boot.loader.generic-extlinux-compatible.enable = true;
+
+  ## F2FS support in initrd
+  boot.initrd.supportedFilesystems = [ "f2fs" ];
+
+  imports = [
+
+    # Hardware
+    inputs.nixos-hardware.nixosModules.raspberry-pi-4
+    ./disko.nix
+    ./hardware-configuration.nix
+
+    # Users
+
+    # Services
+    # "${self}/modules/reverse-proxy-nginx"
+
+  ];
+
+  ## Set once at install time. Do NOT change after first boot.
+  system.stateVersion = "25.11";
+}
+
+--- ./hosts/twoohm/hardware-configuration.nix ---
+{ lib, ... }:
+{
+  ## Networking
+  networking.useDHCP = lib.mkDefault true;
+
+  ## Platform
+  nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
 }
 
 --- ./hosts/oneohm/disko.nix ---
@@ -727,40 +820,55 @@ in
     };
   };
 
-  outputs = { self, nixpkgs, ... }@inputs:
-  let
-    mkHost = { system, hostname, timezone ? "America/Edmonton" }:
-      nixpkgs.lib.nixosSystem {
-        inherit system;
-        specialArgs = { inherit inputs self hostname timezone; };
-        modules = [
-          inputs.disko.nixosModules.disko
-          inputs.sops-nix.nixosModules.sops
-          inputs.home-manager.nixosModules.home-manager
-          ./hosts/${hostname}
-          ./modules/common
-          ./users/smithoo4
-        ];
-      };
-  in {
-    nixosConfigurations = {
-      oneohm = mkHost {
-        system = "x86_64-linux";
-        hostname = "oneohm";
-        timezone = "America/Edmonton";
-      };
+  outputs =
+    { self, nixpkgs, ... }@inputs:
+    let
+      mkHost =
+        {
+          system,
+          hostname,
+          timezone ? "America/Edmonton",
+        }:
+        nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = {
+            inherit
+              inputs
+              self
+              hostname
+              timezone
+              ;
+          };
+          modules = [
+            inputs.disko.nixosModules.disko
+            inputs.sops-nix.nixosModules.sops
+            inputs.home-manager.nixosModules.home-manager
+            ./hosts/${hostname}
+            ./modules/common
+            ./users/smithoo4
+          ];
+        };
+    in
+    {
+      nixosConfigurations = {
 
-      fourohm = mkHost {
-        system = "x86_64-linux";
-        hostname = "fourohm";
-        timezone = "America/Edmonton";
-      };
+        oneohm = mkHost {
+          system = "x86_64-linux";
+          hostname = "oneohm";
+          timezone = "America/Edmonton";
+        };
 
-      # twoohm = mkHost {
-      #   system = "aarch64-linux";
-      #   hostname = "twoohm";
-      #   timezone = "TODO";
-      # };
+        twoohm = mkHost {
+          system = "aarch64-linux";
+          hostname = "twoohm";
+          timezone = "America/Edmonton";
+        };
+
+        fourohm = mkHost {
+          system = "x86_64-linux";
+          hostname = "fourohm";
+          timezone = "America/Edmonton";
+        };
+      };
     };
-  };
 }

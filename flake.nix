@@ -24,40 +24,55 @@
     };
   };
 
-  outputs = { self, nixpkgs, ... }@inputs:
-  let
-    mkHost = { system, hostname, timezone ? "America/Edmonton" }:
-      nixpkgs.lib.nixosSystem {
-        inherit system;
-        specialArgs = { inherit inputs self hostname timezone; };
-        modules = [
-          inputs.disko.nixosModules.disko
-          inputs.sops-nix.nixosModules.sops
-          inputs.home-manager.nixosModules.home-manager
-          ./hosts/${hostname}
-          ./modules/common
-          ./users/smithoo4
-        ];
-      };
-  in {
-    nixosConfigurations = {
-      oneohm = mkHost {
-        system = "x86_64-linux";
-        hostname = "oneohm";
-        timezone = "America/Edmonton";
-      };
+  outputs =
+    { self, nixpkgs, ... }@inputs:
+    let
+      mkHost =
+        {
+          system,
+          hostname,
+          timezone ? "America/Edmonton",
+        }:
+        nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = {
+            inherit
+              inputs
+              self
+              hostname
+              timezone
+              ;
+          };
+          modules = [
+            inputs.disko.nixosModules.disko
+            inputs.sops-nix.nixosModules.sops
+            inputs.home-manager.nixosModules.home-manager
+            ./hosts/${hostname}
+            ./modules/common
+            ./users/smithoo4
+          ];
+        };
+    in
+    {
+      nixosConfigurations = {
 
-      fourohm = mkHost {
-        system = "x86_64-linux";
-        hostname = "fourohm";
-        timezone = "America/Edmonton";
-      };
+        oneohm = mkHost {
+          system = "x86_64-linux";
+          hostname = "oneohm";
+          timezone = "America/Edmonton";
+        };
 
-      # twoohm = mkHost {
-      #   system = "aarch64-linux";
-      #   hostname = "twoohm";
-      #   timezone = "TODO";
-      # };
+        twoohm = mkHost {
+          system = "aarch64-linux";
+          hostname = "twoohm";
+          timezone = "America/Edmonton";
+        };
+
+        fourohm = mkHost {
+          system = "x86_64-linux";
+          hostname = "fourohm";
+          timezone = "America/Edmonton";
+        };
+      };
     };
-  };
 }
