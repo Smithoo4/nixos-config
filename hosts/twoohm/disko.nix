@@ -2,7 +2,7 @@
   disko.devices = {
     disk = {
       main = {
-        device = "/dev/mmcblk0";
+        device = "/dev/disk/by-id/mmc-SC64G_0xb8c78ef3";
         type = "disk";
         content = {
           type = "gpt";

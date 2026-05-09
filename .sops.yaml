@@ -1,6 +1,7 @@
 keys:
   - &admin age1v492u0esm92zy34e33xd9m7z4jt3v03j233ar75k5m7s0rlxes0sxadr2t
   - &oneohm age1ucdxf60vqnpyle47dgzkrvr3pez8tkxevfl6r6nxz5pskfc3m3sqsj9rr5
+  - &twoohm age1g49yfgs2wcsaxqe4yunkmy0fsvdpjzd40slh4je3t07kumntu9dsj96rjz
   - &fourohm age1k73q3tjn7pu8ftxxhefnlj6ax3jkh7mkz37y2902v8xwzwez4cnsdakqu2
 
 creation_rules:
@@ -9,4 +10,5 @@ creation_rules:
       - age:
           - *admin
           - *oneohm
+          - *twoohm
           - *fourohm
