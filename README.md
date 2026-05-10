@@ -22,7 +22,7 @@ Active Development — currently being refined, expanded, and tested.
 ## Roadmap & Implementation
 
 ### Phase 1: Core System & Infrastructure
-- [x] Initial installation guide [here](https://github.com/Smithoo4/nixos-config/blob/main/nixos-homeserver-install-guide.md)
+- [x] Initial installation guide [here](https://github.com/Smithoo4/one-day-i-should-start-a-blog/blob/main/2026%2003%2028%20-%20nixos-homeserver-install-guide.md)
     - [x] Install NixOS from scratch (Flakes + [Disko](https://github.com/nix-community/disko))
     - [x] Home Manager and Git integration
     - [x] Secrets Management via [SOPS-Nix](https://github.com/mic92/sops-nix)
