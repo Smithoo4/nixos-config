@@ -468,7 +468,7 @@ git push
 Verify GitHub received the push and the flake evaluates cleanly:
 
 ```bash
-nix flake show github:Smithoo4/nixos-config
+nix flake show github:Smithoo4/nixos-config --all-systems
 ```
 
 You should see `<hostname>` listed under `nixosConfigurations` in the output.
