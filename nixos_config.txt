@@ -636,6 +636,12 @@ in
                 mountOptions = [ "umask=0077" ];
               };
             };
+            swap = {
+              size = "2G";
+              content = {
+                type = "swap";
+              };
+            };
             root = {
               size = "100%";
               content = {
@@ -671,13 +677,18 @@ in
   boot.loader.grub.enable = false;
   boot.loader.generic-extlinux-compatible.enable = true;
 
+  # Reduce write bursts to the SD card
+  boot.kernel.sysctl = {
+    "vm.dirty_ratio" = 5;
+    "vm.dirty_background_ratio" = 2;
+  };
+
   ## F2FS support in initrd
   boot.initrd.supportedFilesystems = [ "f2fs" ];
 
   imports = [
 
     # Hardware
-    inputs.nixos-hardware.nixosModules.raspberry-pi-4
     ./disko.nix
     ./hardware-configuration.nix
 
@@ -822,10 +833,6 @@ in
     home-manager = {
       url = "github:nix-community/home-manager/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    nixos-hardware = {
-      url = "github:NixOS/nixos-hardware";
     };
   };
 

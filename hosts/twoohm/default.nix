@@ -1,9 +1,15 @@
-{ self, inputs, ... }:
+{ self, ... }:
 {
 
   ## Bootloader (RPi4 — extlinux)
   boot.loader.grub.enable = false;
   boot.loader.generic-extlinux-compatible.enable = true;
+
+  # Reduce write bursts to the SD card
+  boot.kernel.sysctl = {
+    "vm.dirty_ratio" = 5;
+    "vm.dirty_background_ratio" = 2;
+  };
 
   ## F2FS support in initrd
   boot.initrd.supportedFilesystems = [ "f2fs" ];
@@ -11,7 +17,6 @@
   imports = [
 
     # Hardware
-    inputs.nixos-hardware.nixosModules.raspberry-pi-4
     ./disko.nix
     ./hardware-configuration.nix
 
