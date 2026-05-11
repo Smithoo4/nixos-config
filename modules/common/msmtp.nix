@@ -1,8 +1,8 @@
 { config, ... }:
 {
   # Sops-nix
-  sops.secrets.msmtp-password = {};
-  sops.secrets.msmtp-root-alias = {};
+  sops.secrets.msmtp-password = { };
+  sops.secrets.msmtp-root-alias = { };
   sops.templates."aliases" = {
     content = ''
       root: ${config.sops.placeholder.msmtp-root-alias}
@@ -34,7 +34,6 @@
   # Root mail alias
   environment.etc."aliases".source = config.sops.templates."aliases".path;
 }
-
 
 # NOTE: Rogers/Shaw SMTP in Canada is in flux and may be deprecated.
 # Using it for now, but plan to move to:

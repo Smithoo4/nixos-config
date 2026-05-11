@@ -1,4 +1,10 @@
-{ pkgs, self, hostname, timezone, ... }:
+{
+  pkgs,
+  self,
+  hostname,
+  timezone,
+  ...
+}:
 {
   imports = [
     ./openssh.nix
@@ -6,6 +12,7 @@
     ./notify-failure.nix
     ./auto-upgrade.nix
     ./nix-maintenance.nix
+    ./fail2ban.nix
   ];
 
   # zram
@@ -29,7 +36,10 @@
   home-manager.useUserPackages = true;
 
   # Nix experimental features
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
 
   # Nix Download Buffer
   nix.settings.download-buffer-size = 268435456; # 256 MB
