@@ -19,7 +19,6 @@
     # Hardware
     ./disko.nix
     ./hardware-configuration.nix
-    ./wifi.nix
 
     # Users
 
