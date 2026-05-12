@@ -27,7 +27,7 @@ in
     package = customCaddy;
 
     email = "smith_oo4@shaw.ca";
-    acmeCA = "https://acme-staging-v02.api.letsencrypt.org/directory"; # staging for testing
+    # acmeCA = "https://acme-staging-v02.api.letsencrypt.org/directory"; # staging for testing
 
     globalConfig = ''
       # ACME using DuckDNS DNS-01 challenge
