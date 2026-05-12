@@ -17,6 +17,7 @@
       #Staging for testing — comment out for production
       server = "https://acme-staging-v02.api.letsencrypt.org/directory";
       dnsProvider = "duckdns";
+      dnsResolver = "8.8.8.8:53,1.1.1.1:53";
       environmentFile = config.sops.templates."acme-duckdns-env".path;
     };
   };
