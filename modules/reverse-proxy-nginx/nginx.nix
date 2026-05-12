@@ -4,6 +4,7 @@
   # Nginx
   services.nginx = {
     enable = true;
+    package = pkgs.angie;
     enableReload = true;
 
     recommendedTlsSettings = true;
@@ -27,6 +28,9 @@
   };
 
   # Firewall (IPv4 + IPv6)
-  networking.firewall.allowedTCPPorts = [ 80 443 ];
+  networking.firewall.allowedTCPPorts = [
+    80
+    443
+  ];
   networking.firewall.allowedUDPPorts = [ 443 ];
 }
