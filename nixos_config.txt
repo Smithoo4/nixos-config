@@ -277,22 +277,6 @@ in
       }
     '';
 
-    extraConfig = ''
-      (security) {
-        tls {
-          curves x25519 secp256r1 secp384r1
-          protocols tls1.3
-        }
-        header {
-          Strict-Transport-Security "max-age=31536000; includeSubDomains"
-          X-Frame-Options "DENY"
-          X-Content-Type-Options "nosniff"
-          Referrer-Policy "strict-origin-when-cross-origin"
-          # Override Permissions-Policy per virtualhost for services needing camera/microphone
-          Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
-        }
-      }
-    '';
     #openFirewall = true;  # not available in 25.11 - enable when stable on your channel
   };
 
@@ -316,7 +300,7 @@ let
 
   testPageFile = ./html/random.html;
 
-  webroot = pkgs.runCommand "caddy-test-page" {} ''
+  webroot = pkgs.runCommand "caddy-test-page" { } ''
     mkdir -p $out
     substitute ${testPageFile} $out/index.html \
       --replace-fail "{{HOSTNAME}}" "${config.networking.hostName}"
@@ -325,7 +309,6 @@ in
 {
   services.caddy.virtualHosts.${domain} = {
     extraConfig = ''
-      import security
       root * ${webroot}
       file_server
     '';
@@ -346,7 +329,6 @@ in
 {
   services.caddy.virtualHosts.${domain} = {
     extraConfig = ''
-      import security
       reverse_proxy localhost:8080
     '';
   };
