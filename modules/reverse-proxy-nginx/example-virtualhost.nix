@@ -22,6 +22,9 @@ in
 
     locations."/" = {
       proxyPass = "http://127.0.0.1:8080";
+      extraConfig = ''
+        limit_req zone=general burst=20 nodelay;
+      '';
     };
 
     # Override clientMaxBodySize for file-heavy services
