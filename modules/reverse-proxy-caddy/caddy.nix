@@ -12,7 +12,7 @@ let
       "github.com/caddy-dns/duckdns@v0.5.0"
       "github.com/mholt/caddy-ratelimit@v0.1.0"
     ];
-    hash = "sha256-oRlMRutaZEZqmB4FuV+01ZOaTLJTWGEQ4bHKbY5eeaI=";
+    hash = "sha256-hV+q0HnUrYcI/p4gvM/S0Oln8fn8MRZnprmCRexsnqo=";
   };
 in
 {
