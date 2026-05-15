@@ -48,8 +48,8 @@
       enabled = true;
       filter = "nginx-limit-req";
       port = "http,https";
-      logpath = "/var/log/nginx/error.log";
-      backend = "polling";
+      backend = "systemd";
+      journalmatch = "_SYSTEMD_UNIT=nginx.service";
       maxretry = 5;
     };
   };
