@@ -8,7 +8,10 @@
 let
   # Plugins
   customCaddy = pkgs.caddy.withPlugins {
-    plugins = [ "github.com/caddy-dns/duckdns@v0.5.0" ];
+    plugins = [
+      "github.com/caddy-dns/duckdns@v0.5.0"
+      "github.com/mholt/caddy-ratelimit@v0.1.0"
+    ];
     hash = "sha256-oRlMRutaZEZqmB4FuV+01ZOaTLJTWGEQ4bHKbY5eeaI=";
   };
 in

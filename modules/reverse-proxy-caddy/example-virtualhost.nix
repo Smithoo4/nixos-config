@@ -11,7 +11,13 @@ in
 {
   services.caddy.virtualHosts.${domain} = {
     extraConfig = ''
-      reverse_proxy localhost:8080
+      rate_limit {
+        zone general {
+          key {remote_host}
+          events 10
+          window 1s
+        }
+         reverse_proxy localhost:8080
     '';
   };
 }
