@@ -6,16 +6,33 @@
     ./acme.nix
     ./nginx.nix
     ./testPage.nix
+    ./fail2ban.nix
   ];
 }
 
 --- ./modules/reverse-proxy-nginx/nginx.nix ---
-{ ... }:
-
+{ pkgs, ... }:
+let
+  # Declaratively generate a self-signed "snake oil" certificate.
+  snakeoilCert =
+    pkgs.runCommand "snakeoil-cert"
+      {
+        nativeBuildInputs = [ pkgs.openssl ];
+      }
+      ''
+        mkdir -p $out
+        openssl req -x509 -nodes -days 3650 \
+          -newkey rsa:2048 \
+          -keyout $out/key.pem \
+          -out $out/cert.pem \
+          -subj "/CN=invalid"
+      '';
+in
 {
-  # Nginx
+  ## Nginx
   services.nginx = {
     enable = true;
+    package = pkgs.angie;
     enableReload = true;
 
     recommendedTlsSettings = true;
@@ -27,19 +44,25 @@
     clientMaxBodySize = "100m";
   };
 
-  # Catch-all: drop unmatched HTTP
+  ## Catch-all: drop ALL unmatched traffic (HTTP + HTTPS) → 444
   services.nginx.virtualHosts."_" = {
     default = true;
-    extraConfig = "return 444;";
+    addSSL = true;
+    sslCertificate = "${snakeoilCert}/cert.pem";
+    sslCertificateKey = "${snakeoilCert}/key.pem";
+
+    extraConfig = ''
+      access_log /var/log/nginx/catchall.access.log;
+      error_log  /var/log/nginx/catchall.error.log;
+      return 444;
+    '';
   };
 
-  # Catch-all: reject unmatched HTTPS (TLS handshake rejected via SNI)
-  services.nginx.virtualHosts."_reject_https" = {
-    rejectSSL = true;
-  };
-
-  # Firewall (IPv4 + IPv6)
-  networking.firewall.allowedTCPPorts = [ 80 443 ];
+  ## Firewall (IPv4 + IPv6)
+  networking.firewall.allowedTCPPorts = [
+    80
+    443
+  ];
   networking.firewall.allowedUDPPorts = [ 443 ];
 }
 
@@ -61,8 +84,9 @@
     defaults = {
       email = "smith_oo4@shaw.ca";
       #Staging for testing — comment out for production
-      server = "https://acme-staging-v02.api.letsencrypt.org/directory";
+      # server = "https://acme-staging-v02.api.letsencrypt.org/directory";
       dnsProvider = "duckdns";
+      dnsResolver = "8.8.8.8:53,1.1.1.1:53";
       environmentFile = config.sops.templates."acme-duckdns-env".path;
     };
   };
@@ -135,6 +159,53 @@ in
   };
 }
 
+--- ./modules/reverse-proxy-nginx/fail2ban.nix ---
+{ ... }:
+{
+  ## Custom filter: match EVERY line in the catch-all access log.
+  ##
+  ## Since catchall.access.log ONLY receives traffic that hit the
+  ## default_server (no valid FQDN / unmatched Host header), every
+  ## single line is hostile — regardless of HTTP status code.
+  ## Assumes default nginx "combined" log format (not customised).
+  environment.etc."fail2ban/filter.d/nginx-catchall.conf".text = ''
+    [Definition]
+    failregex = ^<HOST>
+    ignoreregex =
+  '';
+
+  ## Nginx fail2ban jails
+  ## Assumes services.fail2ban.enable = true in modules/common/fail2ban.nix
+  services.fail2ban.jails = {
+    ## Ban clients repeatedly hitting the catch-all (no valid FQDN)
+    nginx-catchall.settings = {
+      enabled = true;
+      filter = "nginx-catchall";
+      port = "http,https";
+      logpath = "/var/log/nginx/catchall.access.log";
+      backend = "polling";
+    };
+
+    ## Ban bots probing common exploit paths on real vhosts
+    nginx-botsearch.settings = {
+      enabled = true;
+      filter = "nginx-botsearch";
+      port = "http,https";
+      logpath = "/var/log/nginx/access.log";
+      backend = "polling";
+    };
+
+    ## Ban clients sending malformed/garbage requests to real vhosts
+    nginx-bad-request.settings = {
+      enabled = true;
+      filter = "nginx-bad-request";
+      port = "http,https";
+      logpath = "/var/log/nginx/access.log";
+      backend = "polling";
+    };
+  };
+}
+
 --- ./modules/reverse-proxy-caddy/default.nix ---
 {  ... }:
 {
@@ -156,7 +227,7 @@ let
   # Plugins
   customCaddy = pkgs.caddy.withPlugins {
     plugins = [ "github.com/caddy-dns/duckdns@v0.5.0" ];
-    hash = "sha256-uMYFZJ+dOoahO9+nAU+bGiuFQRmPbPWFwH1uH8xBcFQ=";
+    hash = "sha256-qfByVEbfh2dNGJaiFnmSSoRxaL11pyz/nzSthYAgyRg=";
   };
 in
 {
@@ -174,7 +245,7 @@ in
     package = customCaddy;
 
     email = "smith_oo4@shaw.ca";
-    acmeCA = "https://acme-staging-v02.api.letsencrypt.org/directory"; # staging for testing
+    # acmeCA = "https://acme-staging-v02.api.letsencrypt.org/directory"; # staging for testing
 
     globalConfig = ''
       # ACME using DuckDNS DNS-01 challenge
@@ -313,7 +384,13 @@ in
 }
 
 --- ./modules/common/default.nix ---
-{ pkgs, self, hostname, timezone, ... }:
+{
+  pkgs,
+  self,
+  hostname,
+  timezone,
+  ...
+}:
 {
   imports = [
     ./openssh.nix
@@ -321,6 +398,7 @@ in
     ./notify-failure.nix
     ./auto-upgrade.nix
     ./nix-maintenance.nix
+    ./fail2ban.nix
   ];
 
   # zram
@@ -344,7 +422,10 @@ in
   home-manager.useUserPackages = true;
 
   # Nix experimental features
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
 
   # Nix Download Buffer
   nix.settings.download-buffer-size = 268435456; # 256 MB
@@ -379,8 +460,8 @@ in
 { config, ... }:
 {
   # Sops-nix
-  sops.secrets.msmtp-password = {};
-  sops.secrets.msmtp-root-alias = {};
+  sops.secrets.msmtp-password = { };
+  sops.secrets.msmtp-root-alias = { };
   sops.templates."aliases" = {
     content = ''
       root: ${config.sops.placeholder.msmtp-root-alias}
@@ -412,7 +493,6 @@ in
   # Root mail alias
   environment.etc."aliases".source = config.sops.templates."aliases".path;
 }
-
 
 # NOTE: Rogers/Shaw SMTP in Canada is in flux and may be deprecated.
 # Using it for now, but plan to move to:
@@ -453,6 +533,38 @@ in
     };
   };
 }
+
+--- ./modules/common/fail2ban.nix ---
+{ ... }:
+{
+  ## fail2ban — SSH protection is pre-configured by NixOS.
+  services.fail2ban = {
+    enable = true;
+    bantime = "24h";
+    bantime-increment = {
+      enable = true;
+      multipliers = "1 2 4 8 16 32 64";
+      maxtime = "168h";
+      overalljails = true;
+    };
+
+    ignoreIP = [
+      "127.0.0.1/8"
+      "::1"
+      "192.168.0.0/24"
+    ];
+  };
+}
+
+# Check fail2ban is running and SSH jail is active
+# sudo fail2ban-client status
+# sudo fail2ban-client status sshd
+
+# Check the nftables rules were created
+# sudo nft list ruleset | grep f2b
+
+# Watch bans in real time
+# journalctl -u fail2ban -f
 
 --- ./users/smithoo4/home-manager.nix ---
 { pkgs, ... }:
@@ -582,7 +694,7 @@ in
     # Users
 
     # Services
-    # "${self}/modules/reverse-proxy-nginx"
+    "${self}/modules/reverse-proxy-nginx"
 
   ];
 
@@ -670,7 +782,7 @@ in
 }
 
 --- ./hosts/twoohm/default.nix ---
-{ self, inputs, ... }:
+{ self, ... }:
 {
 
   ## Bootloader (RPi4 — extlinux)
@@ -714,7 +826,7 @@ in
     [ (modulesPath + "/installer/scan/not-detected.nix")
     ];
 
-  boot.initrd.availableKernelModules = [ "xhci_pci" ];
+  boot.initrd.availableKernelModules = [ "xhci_pci" "usb_storage" ];
   boot.initrd.kernelModules = [ ];
   boot.kernelModules = [ ];
   boot.extraModulePackages = [ ];
@@ -779,7 +891,7 @@ in
     # Users
 
     # Services
-    #"${self}/modules/reverse-proxy-caddy"
+    "${self}/modules/reverse-proxy-caddy"
 
   ];
 
