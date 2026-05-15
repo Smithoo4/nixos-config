@@ -247,8 +247,11 @@ in
 let
   # Plugins
   customCaddy = pkgs.caddy.withPlugins {
-    plugins = [ "github.com/caddy-dns/duckdns@v0.5.0" ];
-    hash = "sha256-qfByVEbfh2dNGJaiFnmSSoRxaL11pyz/nzSthYAgyRg=";
+    plugins = [
+      "github.com/caddy-dns/duckdns@v0.5.0"
+      "github.com/mholt/caddy-ratelimit@v0.1.0"
+    ];
+    hash = "sha256-hV+q0HnUrYcI/p4gvM/S0Oln8fn8MRZnprmCRexsnqo=";
   };
 in
 {
@@ -309,6 +312,13 @@ in
 {
   services.caddy.virtualHosts.${domain} = {
     extraConfig = ''
+      rate_limit {
+        zone general {
+          key {remote_host}
+          events 10
+          window 1s
+        }
+      }
       root * ${webroot}
       file_server
     '';
@@ -329,7 +339,13 @@ in
 {
   services.caddy.virtualHosts.${domain} = {
     extraConfig = ''
-      reverse_proxy localhost:8080
+      rate_limit {
+        zone general {
+          key {remote_host}
+          events 10
+          window 1s
+        }
+         reverse_proxy localhost:8080
     '';
   };
 }

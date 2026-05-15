@@ -16,6 +16,7 @@ Active Development — currently being refined, expanded, and tested.
 | **twoohm** | Planned | Raspberry Pi 4 | Testing and development |
 | **threeohm** | Planned | TBD | TBD |
 | **fourohm** | Active Development | VM | Testing and development |
+| **fiveohm** | Planned | TBD | TBD |
 
 ---
 
@@ -50,11 +51,11 @@ Active Development — currently being refined, expanded, and tested.
     - [X] Strict host matching and drop unmatched requests (e.g. no connecting unless it matches an FQDN)
     - [X] Serve a test page
     - [X] Template for proxying future services
-    - [ ] Test [Angie](https://github.com/webserver-llc/angie) (e.g. `services.nginx.package = pkgs.angie`)
+    - [X] Test [Angie](https://github.com/webserver-llc/angie) (e.g. `services.nginx.package = pkgs.angie`)
 
 *Decision: Continue testing both, with Nginx as the standard.*  
 
-Caddy's custom DuckDNS plugin build adds compile-time friction, especially on low-power ARM hosts. Nginx offers equivalent features with the mature, pre-built `lego` ACME client and better NixOS integration. Both will continue running on separate hosts during early service deployments to compare real-world behavior before full fleet commitment.
+Caddy's custom DuckDNS and rate limiting plugin build adds compile-time friction, especially on low-power ARM hosts. Nginx offers equivalent features with the mature, pre-built `lego` ACME client and better NixOS integration. Both will continue running on separate hosts during early service deployments to compare real-world behaviour before full fleet commitment. There was no notable differences between Nginx mainline and Angie. Will continue with Angie for most of the testing.
 
 ## Phase 3: Security
 - [ ] Set up [CrowdSec](https://www.crowdsec.net/) — *on hold, NixOS module has known issues ([nixpkgs#446307](https://github.com/NixOS/nixpkgs/pull/446307))*
@@ -66,11 +67,13 @@ Caddy's custom DuckDNS plugin build adds compile-time friction, especially on lo
     - [ ] Evaluate [CrowdSec Console](https://app.crowdsec.net/) — cloud monitoring & automation dashboard
     - [ ] Evaluate [Metabase](https://www.metabase.com/) — local self-hosted dashboard (`cscli dashboard setup`)
 - [ ] Set up [Fail2Ban](https://github.com/fail2ban/fail2ban) — *only being considered because of implementation issues with CrowdSec on NixOS*
-    - [ ] SSH protection
+    - [X] SSH protection
     - [ ] Caddy protection
         - [ ] Block repeated requests that don't match an FQDN (IP-only / unknown SNI)
-    - [ ] Nginx protection
-        - [ ] Block repeated requests that don't match an FQDN (IP-only / unknown SNI)
+        - [ ] Block on rate limiting
+    - [X] Nginx protection
+        - [X] Block repeated requests that don't match an FQDN (IP-only / unknown SNI)
+        - [X] Block on rate limiting
 
 &gt; **Note:** Not all evaluated tools will necessarily be implemented. Items are tracked for comparison and may be dropped based on findings.
   
