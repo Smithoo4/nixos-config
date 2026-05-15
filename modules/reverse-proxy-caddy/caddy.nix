@@ -9,7 +9,7 @@ let
   # Plugins
   customCaddy = pkgs.caddy.withPlugins {
     plugins = [ "github.com/caddy-dns/duckdns@v0.5.0" ];
-    hash = "sha256-qfByVEbfh2dNGJaiFnmSSoRxaL11pyz/nzSthYAgyRg=";
+    hash = "sha256-oRlMRutaZEZqmB4FuV+01ZOaTLJTWGEQ4bHKbY5eeaI=";
   };
 in
 {
