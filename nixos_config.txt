@@ -42,6 +42,16 @@ in
     recommendedBrotliSettings = true;
 
     clientMaxBodySize = "100m";
+    commonHttpConfig = ''
+      # Security Headers
+      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+      add_header X-Frame-Options "DENY" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+      add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+      # Rate limiting zone — shared across all vhosts
+      limit_req_zone $binary_remote_addr zone=general:10m rate=10r/s;
+    '';
   };
 
   ## Catch-all: drop ALL unmatched traffic (HTTP + HTTPS) → 444
@@ -100,7 +110,7 @@ let
 
   testPageFile = ./html/random.html;
 
-  webroot = pkgs.runCommand "nginx-test-page" {} ''
+  webroot = pkgs.runCommand "nginx-test-page" { } ''
     mkdir -p $out
     substitute ${testPageFile} $out/index.html \
       --replace-fail "{{HOSTNAME}}" "${config.networking.hostName}"
@@ -121,6 +131,9 @@ in
     locations."/" = {
       root = webroot;
       index = "index.html";
+      extraConfig = ''
+        limit_req zone=general burst=20 nodelay;
+      '';
     };
   };
 }
@@ -184,6 +197,7 @@ in
       port = "http,https";
       logpath = "/var/log/nginx/catchall.access.log";
       backend = "polling";
+      maxretry = 2;
     };
 
     ## Ban bots probing common exploit paths on real vhosts
@@ -202,6 +216,16 @@ in
       port = "http,https";
       logpath = "/var/log/nginx/access.log";
       backend = "polling";
+    };
+
+    ## Ban clients that repeatedly hit rate limits on real vhosts
+    nginx-limit-req.settings = {
+      enabled = true;
+      filter = "nginx-limit-req";
+      port = "http,https";
+      logpath = "/var/log/nginx/error.log";
+      backend = "polling";
+      maxretry = 5;
     };
   };
 }

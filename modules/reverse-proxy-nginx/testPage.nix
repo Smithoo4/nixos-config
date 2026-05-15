@@ -5,7 +5,7 @@ let
 
   testPageFile = ./html/random.html;
 
-  webroot = pkgs.runCommand "nginx-test-page" {} ''
+  webroot = pkgs.runCommand "nginx-test-page" { } ''
     mkdir -p $out
     substitute ${testPageFile} $out/index.html \
       --replace-fail "{{HOSTNAME}}" "${config.networking.hostName}"
@@ -26,6 +26,9 @@ in
     locations."/" = {
       root = webroot;
       index = "index.html";
+      extraConfig = ''
+        limit_req zone=general burst=20 nodelay;
+      '';
     };
   };
 }

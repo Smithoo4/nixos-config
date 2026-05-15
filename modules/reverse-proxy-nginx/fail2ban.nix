@@ -22,6 +22,7 @@
       port = "http,https";
       logpath = "/var/log/nginx/catchall.access.log";
       backend = "polling";
+      maxretry = 2;
     };
 
     ## Ban bots probing common exploit paths on real vhosts
@@ -40,6 +41,16 @@
       port = "http,https";
       logpath = "/var/log/nginx/access.log";
       backend = "polling";
+    };
+
+    ## Ban clients that repeatedly hit rate limits on real vhosts
+    nginx-limit-req.settings = {
+      enabled = true;
+      filter = "nginx-limit-req";
+      port = "http,https";
+      logpath = "/var/log/nginx/error.log";
+      backend = "polling";
+      maxretry = 5;
     };
   };
 }
