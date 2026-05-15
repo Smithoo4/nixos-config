@@ -21,6 +21,7 @@
       filter = "nginx-catchall";
       port = "http,https";
       logpath = "/var/log/nginx/catchall.access.log";
+      backend = "polling";
     };
 
     ## Ban bots probing common exploit paths on real vhosts
@@ -29,6 +30,7 @@
       filter = "nginx-botsearch";
       port = "http,https";
       logpath = "/var/log/nginx/access.log";
+      backend = "polling";
     };
 
     ## Ban clients sending malformed/garbage requests to real vhosts
@@ -37,6 +39,7 @@
       filter = "nginx-bad-request";
       port = "http,https";
       logpath = "/var/log/nginx/access.log";
+      backend = "polling";
     };
   };
 }
