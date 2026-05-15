@@ -38,22 +38,6 @@ in
       }
     '';
 
-    extraConfig = ''
-      (security) {
-        tls {
-          curves x25519 secp256r1 secp384r1
-          protocols tls1.3
-        }
-        header {
-          Strict-Transport-Security "max-age=31536000; includeSubDomains"
-          X-Frame-Options "DENY"
-          X-Content-Type-Options "nosniff"
-          Referrer-Policy "strict-origin-when-cross-origin"
-          # Override Permissions-Policy per virtualhost for services needing camera/microphone
-          Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
-        }
-      }
-    '';
     #openFirewall = true;  # not available in 25.11 - enable when stable on your channel
   };
 

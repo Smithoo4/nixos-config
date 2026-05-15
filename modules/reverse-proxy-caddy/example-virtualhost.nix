@@ -11,7 +11,6 @@ in
 {
   services.caddy.virtualHosts.${domain} = {
     extraConfig = ''
-      import security
       reverse_proxy localhost:8080
     '';
   };
