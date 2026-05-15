@@ -34,28 +34,7 @@ in
   ## Catch-all: drop ALL unmatched traffic (HTTP + HTTPS) → 444
   services.nginx.virtualHosts."_" = {
     default = true;
-
-    listen = [
-      {
-        addr = "0.0.0.0";
-        port = 80;
-      }
-      {
-        addr = "[::]";
-        port = 80;
-      }
-      {
-        addr = "0.0.0.0";
-        port = 443;
-        ssl = true;
-      }
-      {
-        addr = "[::]";
-        port = 443;
-        ssl = true;
-      }
-    ];
-
+    addSSL = true;
     sslCertificate = "${snakeoilCert}/cert.pem";
     sslCertificateKey = "${snakeoilCert}/key.pem";
 
