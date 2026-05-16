@@ -19,7 +19,7 @@
     nginx-catchall.settings = {
       enabled = true;
       filter = "nginx-catchall";
-      protocol = "all";
+      protocol = "tcp,udp";
       port = "http,https";
       logpath = "/var/log/nginx/catchall.access.log";
       backend = "polling";
@@ -30,7 +30,7 @@
     nginx-botsearch.settings = {
       enabled = true;
       filter = "nginx-botsearch";
-      protocol = "all";
+      protocol = "tcp,udp";
       port = "http,https";
       logpath = "/var/log/nginx/access.log";
       backend = "polling";
@@ -40,7 +40,7 @@
     nginx-bad-request.settings = {
       enabled = true;
       filter = "nginx-bad-request";
-      protocol = "all";
+      protocol = "tcp,udp";
       port = "http,https";
       logpath = "/var/log/nginx/access.log";
       backend = "polling";
@@ -50,7 +50,7 @@
     nginx-limit-req.settings = {
       enabled = true;
       filter = "nginx-limit-req";
-      protocol = "all";
+      protocol = "tcp,udp";
       port = "http,https";
       backend = "systemd";
       journalmatch = "_SYSTEMD_UNIT=nginx.service";
