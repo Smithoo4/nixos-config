@@ -357,6 +357,7 @@ in
     nginx-catchall.settings = {
       enabled = true;
       filter = "nginx-catchall";
+      protocol = "tcp,udp";
       port = "http,https";
       logpath = "/var/log/nginx/catchall.access.log";
       backend = "polling";
@@ -367,6 +368,7 @@ in
     nginx-botsearch.settings = {
       enabled = true;
       filter = "nginx-botsearch";
+      protocol = "tcp,udp";
       port = "http,https";
       logpath = "/var/log/nginx/access.log";
       backend = "polling";
@@ -376,6 +378,7 @@ in
     nginx-bad-request.settings = {
       enabled = true;
       filter = "nginx-bad-request";
+      protocol = "tcp,udp";
       port = "http,https";
       logpath = "/var/log/nginx/access.log";
       backend = "polling";
@@ -385,6 +388,7 @@ in
     nginx-limit-req.settings = {
       enabled = true;
       filter = "nginx-limit-req";
+      protocol = "tcp,udp";
       port = "http,https";
       backend = "systemd";
       journalmatch = "_SYSTEMD_UNIT=nginx.service";
@@ -608,7 +612,7 @@ in
 # sudo fail2ban-client status sshd
 
 # Check the nftables rules were created
-# sudo nft list ruleset | grep f2b
+# sudo nft list sets inet f2b-table
 
 # Watch bans in real time
 # journalctl -u fail2ban -f

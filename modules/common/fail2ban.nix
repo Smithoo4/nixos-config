@@ -24,7 +24,7 @@
 # sudo fail2ban-client status sshd
 
 # Check the nftables rules were created
-# sudo nft list ruleset | grep f2b
+# sudo nft list sets inet f2b-table
 
 # Watch bans in real time
 # journalctl -u fail2ban -f

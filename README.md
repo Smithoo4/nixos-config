@@ -42,7 +42,7 @@ Active Development — currently being refined, expanded, and tested.
     - [X] Enable HTTP/3
     - [X] Hardened proxy connections
     - [X] Strict host matching and drop unmatched requests (e.g. no connecting unless it matches an FQDN)
-    - [X]  Rate limiting (plugin-based)
+    - [X] Rate limiting (plugin-based)
     - [X] Serve a test page
     - [X] Template for proxying future services
 - [X] Set up [Nginx](https://nginx.org/)
@@ -86,12 +86,12 @@ There were no significant differences observed between Nginx mainline and Angie 
     - [ ] Evaluate [CrowdSec Console](https://app.crowdsec.net/) — cloud monitoring & automation dashboard
     - [ ] Evaluate [Metabase](https://www.metabase.com/) — local self-hosted dashboard (`cscli dashboard setup`)
 
-- [ ] Set up [Fail2Ban](https://github.com/fail2ban/fail2ban) — *selected as the primary protection mechanism due to CrowdSec limitations on NixOS*
+- [X] Set up [Fail2Ban](https://github.com/fail2ban/fail2ban) — *selected as the primary protection mechanism due to CrowdSec limitations on NixOS*
     - [X] SSH protection
     - [X] Nginx protection
         - [X] Block repeated requests that don't match an FQDN (IP-only / unknown SNI)
         - [X] Block on rate limiting
-        - [ ] Block web traffic (including HTTP/3 / QUIC) via firewall *(not yet implemented)*
+        - [X] Block web traffic (including HTTP/3 / QUIC) via firewall *(not yet implemented)*
 
 ### Decision: Adopt Fail2Ban as Primary Control; CrowdSec Deferred
 
