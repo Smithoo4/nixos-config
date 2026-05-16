@@ -1,238 +1,37 @@
 
---- ./modules/reverse-proxy-nginx/default.nix ---
-{ ... }:
-{
-  imports = [
-    ./acme.nix
-    ./nginx.nix
-    ./testPage.nix
-    ./fail2ban.nix
-  ];
-}
-
---- ./modules/reverse-proxy-nginx/nginx.nix ---
-{ pkgs, ... }:
-let
-  # Declaratively generate a self-signed "snake oil" certificate.
-  snakeoilCert =
-    pkgs.runCommand "snakeoil-cert"
-      {
-        nativeBuildInputs = [ pkgs.openssl ];
-      }
-      ''
-        mkdir -p $out
-        openssl req -x509 -nodes -days 3650 \
-          -newkey rsa:2048 \
-          -keyout $out/key.pem \
-          -out $out/cert.pem \
-          -subj "/CN=invalid"
-      '';
-in
-{
-  ## Nginx
-  services.nginx = {
-    enable = true;
-    package = pkgs.angie;
-    enableReload = true;
-
-    recommendedTlsSettings = true;
-    recommendedProxySettings = true;
-    recommendedGzipSettings = true;
-    recommendedOptimisation = true;
-    recommendedBrotliSettings = true;
-
-    clientMaxBodySize = "100m";
-    commonHttpConfig = ''
-      # Rate limiting zone — shared across all vhosts
-      limit_req_zone $binary_remote_addr zone=general:10m rate=10r/s;
-    '';
-  };
-
-  ## Catch-all: drop ALL unmatched traffic (HTTP + HTTPS) → 444
-  services.nginx.virtualHosts."_" = {
-    default = true;
-    addSSL = true;
-    sslCertificate = "${snakeoilCert}/cert.pem";
-    sslCertificateKey = "${snakeoilCert}/key.pem";
-
-    extraConfig = ''
-      access_log /var/log/nginx/catchall.access.log;
-      error_log  /var/log/nginx/catchall.error.log;
-      return 444;
-    '';
-  };
-
-  ## Firewall (IPv4 + IPv6)
-  networking.firewall.allowedTCPPorts = [
-    80
-    443
-  ];
-  networking.firewall.allowedUDPPorts = [ 443 ];
-}
-
---- ./modules/reverse-proxy-nginx/acme.nix ---
-{ config, ... }:
-
-{
-  # Sops secrets
-  sops.secrets.duckdns-token = { };
-  sops.templates."acme-duckdns-env" = {
-    content = ''
-      DUCKDNS_TOKEN=${config.sops.placeholder.duckdns-token}
-    '';
-  };
-
-  # ACME — DNS-01 via DuckDNS (lego)
-  security.acme = {
-    acceptTerms = true;
-    defaults = {
-      email = "smith_oo4@shaw.ca";
-      #Staging for testing — comment out for production
-      # server = "https://acme-staging-v02.api.letsencrypt.org/directory";
-      dnsProvider = "duckdns";
-      dnsResolver = "8.8.8.8:53,1.1.1.1:53";
-      environmentFile = config.sops.templates."acme-duckdns-env".path;
-    };
-  };
-}
-
---- ./modules/reverse-proxy-nginx/testPage.nix ---
-{ config, pkgs, ... }:
-
-let
-  domain = "${config.networking.hostName}.duckdns.org";
-
-  testPageFile = ./html/random.html;
-
-  webroot = pkgs.runCommand "nginx-test-page" { } ''
-    mkdir -p $out
-    substitute ${testPageFile} $out/index.html \
-      --replace-fail "{{HOSTNAME}}" "${config.networking.hostName}"
-  '';
-in
-{
-  services.nginx.virtualHosts.${domain} = {
-    forceSSL = true;
-    enableACME = true;
-    acmeRoot = null;
-    http3 = true;
-    quic = true;
-
-    extraConfig = ''
-      add_header Alt-Svc 'h3=":443"; ma=86400' always;
-    '';
-
-    locations."/" = {
-      root = webroot;
-      index = "index.html";
-      extraConfig = ''
-        limit_req zone=general burst=20 nodelay;
-      '';
-    };
-  };
-}
-
---- ./modules/reverse-proxy-nginx/example-virtualhost.nix ---
+--- ./modules/reverse-proxy-caddy/default.nix ---
 # ┌─────────────────────────────────────────────────────────────────┐
-# │  REFERENCE ONLY — This file is NOT imported in default.nix.    │
-# │  Copy and adapt for new services.                              │
+# │  ABANDONED — Keeping for reference only.                       │
+# │                                                                │
+# │  Reasons for choosing Nginx over Caddy on NixOS:               │
+# │                                                                │
+# │  • Caddy requires compiling a custom build for DNS-01 ACME     │
+# │    challenges (e.g. DuckDNS plugin), adding maintenance        │
+# │    overhead compared to Nginx’s built-in ACME integration.     │
+# │                                                                │
+# │  • No pre-built fail2ban jails or filters for Caddy. The       │
+# │    Nginx + fail2ban ecosystem on NixOS is mature, widely       │
+# │    used, and well documented with working examples.            │
+# │                                                                │
+# │  • CrowdSec shows stronger native alignment with Caddy         │
+# │    (e.g. bouncers and middleware approach), potentially        │
+# │    making it a better long-term fit for Caddy than fail2ban.    │
+# │    However, on NixOS the CrowdSec ecosystem (packages,         │
+# │    modules, and integrations) is still immature and not        │
+# │    considered production-ready in this setup.                   │
+# │                                                                │
+# │  • Given the above, Nginx provides a more stable,               │
+# │    reproducible, and better-supported solution on NixOS today.  │
+# │                                                                │
+# │  The Nginx reverse-proxy module is the active implementation.  │
+# │  See: modules/reverse-proxy-nginx                              │
 # └─────────────────────────────────────────────────────────────────┘
 
-{ config, ... }:
-
-let
-  domain = "blog.${config.networking.hostName}.duckdns.org";
-in
-{
-  services.nginx.virtualHosts.${domain} = {
-    forceSSL = true;
-    enableACME = true;
-    acmeRoot = null;
-    http3 = true;
-    quic = true;
-
-    extraConfig = ''
-      add_header Alt-Svc 'h3=":443"; ma=86400' always;
-    '';
-
-    locations."/" = {
-      proxyPass = "http://127.0.0.1:8080";
-      extraConfig = ''
-        limit_req zone=general burst=20 nodelay;
-      '';
-    };
-
-    # Override clientMaxBodySize for file-heavy services
-    # locations."/upload".extraConfig = ''
-    #   client_max_body_size 2g;
-    # '';
-  };
-}
-
---- ./modules/reverse-proxy-nginx/fail2ban.nix ---
 { ... }:
 {
-  ## Custom filter: match EVERY line in the catch-all access log.
-  ##
-  ## Since catchall.access.log ONLY receives traffic that hit the
-  ## default_server (no valid FQDN / unmatched Host header), every
-  ## single line is hostile — regardless of HTTP status code.
-  ## Assumes default nginx "combined" log format (not customised).
-  environment.etc."fail2ban/filter.d/nginx-catchall.conf".text = ''
-    [Definition]
-    failregex = ^<HOST>
-    ignoreregex =
-  '';
-
-  ## Nginx fail2ban jails
-  ## Assumes services.fail2ban.enable = true in modules/common/fail2ban.nix
-  services.fail2ban.jails = {
-    ## Ban clients repeatedly hitting the catch-all (no valid FQDN)
-    nginx-catchall.settings = {
-      enabled = true;
-      filter = "nginx-catchall";
-      port = "http,https";
-      logpath = "/var/log/nginx/catchall.access.log";
-      backend = "polling";
-      maxretry = 2;
-    };
-
-    ## Ban bots probing common exploit paths on real vhosts
-    nginx-botsearch.settings = {
-      enabled = true;
-      filter = "nginx-botsearch";
-      port = "http,https";
-      logpath = "/var/log/nginx/access.log";
-      backend = "polling";
-    };
-
-    ## Ban clients sending malformed/garbage requests to real vhosts
-    nginx-bad-request.settings = {
-      enabled = true;
-      filter = "nginx-bad-request";
-      port = "http,https";
-      logpath = "/var/log/nginx/access.log";
-      backend = "polling";
-    };
-
-    ## Ban clients that repeatedly hit rate limits on real vhosts
-    nginx-limit-req.settings = {
-      enabled = true;
-      filter = "nginx-limit-req";
-      port = "http,https";
-      backend = "systemd";
-      journalmatch = "_SYSTEMD_UNIT=nginx.service";
-      maxretry = 5;
-    };
-  };
-}
-
---- ./modules/reverse-proxy-caddy/default.nix ---
-{  ... }:
-{
   imports = [
-     ./caddy.nix
-     ./testPage.nix
+    ./caddy.nix
+    ./testPage.nix
   ];
 }
 
@@ -345,7 +144,8 @@ in
           events 10
           window 1s
         }
-         reverse_proxy localhost:8080
+      }
+      reverse_proxy localhost:8080
     '';
   };
 }
@@ -361,6 +161,234 @@ in
     notifications.mail = {
       enable = true;
       recipient = "root";
+    };
+  };
+}
+
+--- ./modules/reverse-proxy/default.nix ---
+{ ... }:
+{
+  imports = [
+    ./acme.nix
+    ./nginx.nix
+    ./testPage.nix
+    ./fail2ban.nix
+  ];
+}
+
+--- ./modules/reverse-proxy/nginx.nix ---
+{ pkgs, ... }:
+let
+  # Declaratively generate a self-signed "snake oil" certificate.
+  snakeoilCert =
+    pkgs.runCommand "snakeoil-cert"
+      {
+        nativeBuildInputs = [ pkgs.openssl ];
+      }
+      ''
+        mkdir -p $out
+        openssl req -x509 -nodes -days 3650 \
+          -newkey rsa:2048 \
+          -keyout $out/key.pem \
+          -out $out/cert.pem \
+          -subj "/CN=invalid"
+      '';
+in
+{
+  ## Nginx
+  services.nginx = {
+    enable = true;
+    package = pkgs.angie;
+    enableReload = true;
+
+    recommendedTlsSettings = true;
+    recommendedProxySettings = true;
+    recommendedGzipSettings = true;
+    recommendedOptimisation = true;
+    recommendedBrotliSettings = true;
+
+    clientMaxBodySize = "100m";
+    commonHttpConfig = ''
+      # Rate limiting zone — shared across all vhosts
+      limit_req_zone $binary_remote_addr zone=general:10m rate=10r/s;
+    '';
+  };
+
+  ## Catch-all: drop ALL unmatched traffic (HTTP + HTTPS) → 444
+  services.nginx.virtualHosts."_" = {
+    default = true;
+    addSSL = true;
+    sslCertificate = "${snakeoilCert}/cert.pem";
+    sslCertificateKey = "${snakeoilCert}/key.pem";
+
+    extraConfig = ''
+      access_log /var/log/nginx/catchall.access.log;
+      error_log  /var/log/nginx/catchall.error.log;
+      return 444;
+    '';
+  };
+
+  ## Firewall (IPv4 + IPv6)
+  networking.firewall.allowedTCPPorts = [
+    80
+    443
+  ];
+  networking.firewall.allowedUDPPorts = [ 443 ];
+}
+
+--- ./modules/reverse-proxy/acme.nix ---
+{ config, ... }:
+
+{
+  # Sops secrets
+  sops.secrets.duckdns-token = { };
+  sops.templates."acme-duckdns-env" = {
+    content = ''
+      DUCKDNS_TOKEN=${config.sops.placeholder.duckdns-token}
+    '';
+  };
+
+  # ACME — DNS-01 via DuckDNS (lego)
+  security.acme = {
+    acceptTerms = true;
+    defaults = {
+      email = "smith_oo4@shaw.ca";
+      #Staging for testing — comment out for production
+      # server = "https://acme-staging-v02.api.letsencrypt.org/directory";
+      dnsProvider = "duckdns";
+      dnsResolver = "8.8.8.8:53,1.1.1.1:53";
+      environmentFile = config.sops.templates."acme-duckdns-env".path;
+    };
+  };
+}
+
+--- ./modules/reverse-proxy/testPage.nix ---
+{ config, pkgs, ... }:
+
+let
+  domain = "${config.networking.hostName}.duckdns.org";
+
+  testPageFile = ./html/random.html;
+
+  webroot = pkgs.runCommand "nginx-test-page" { } ''
+    mkdir -p $out
+    substitute ${testPageFile} $out/index.html \
+      --replace-fail "{{HOSTNAME}}" "${config.networking.hostName}"
+  '';
+in
+{
+  services.nginx.virtualHosts.${domain} = {
+    forceSSL = true;
+    enableACME = true;
+    acmeRoot = null;
+    http3 = true;
+    quic = true;
+
+    extraConfig = ''
+      add_header Alt-Svc 'h3=":443"; ma=86400' always;
+    '';
+
+    locations."/" = {
+      root = webroot;
+      index = "index.html";
+      extraConfig = ''
+        limit_req zone=general burst=20 nodelay;
+      '';
+    };
+  };
+}
+
+--- ./modules/reverse-proxy/example-virtualhost.nix ---
+# ┌─────────────────────────────────────────────────────────────────┐
+# │  REFERENCE ONLY — This file is NOT imported in default.nix.    │
+# │  Copy and adapt for new services.                              │
+# └─────────────────────────────────────────────────────────────────┘
+
+{ config, ... }:
+
+let
+  domain = "blog.${config.networking.hostName}.duckdns.org";
+in
+{
+  services.nginx.virtualHosts.${domain} = {
+    forceSSL = true;
+    enableACME = true;
+    acmeRoot = null;
+    http3 = true;
+    quic = true;
+
+    extraConfig = ''
+      add_header Alt-Svc 'h3=":443"; ma=86400' always;
+    '';
+
+    locations."/" = {
+      proxyPass = "http://127.0.0.1:8080";
+      extraConfig = ''
+        limit_req zone=general burst=20 nodelay;
+      '';
+    };
+
+    # Override clientMaxBodySize for file-heavy services
+    # locations."/upload".extraConfig = ''
+    #   client_max_body_size 2g;
+    # '';
+  };
+}
+
+--- ./modules/reverse-proxy/fail2ban.nix ---
+{ ... }:
+{
+  ## Custom filter: match EVERY line in the catch-all access log.
+  ##
+  ## Since catchall.access.log ONLY receives traffic that hit the
+  ## default_server (no valid FQDN / unmatched Host header), every
+  ## single line is hostile — regardless of HTTP status code.
+  ## Assumes default nginx "combined" log format (not customised).
+  environment.etc."fail2ban/filter.d/nginx-catchall.conf".text = ''
+    [Definition]
+    failregex = ^<HOST>
+    ignoreregex =
+  '';
+
+  ## Nginx fail2ban jails
+  ## Assumes services.fail2ban.enable = true in modules/common/fail2ban.nix
+  services.fail2ban.jails = {
+    ## Ban clients repeatedly hitting the catch-all (no valid FQDN)
+    nginx-catchall.settings = {
+      enabled = true;
+      filter = "nginx-catchall";
+      port = "http,https";
+      logpath = "/var/log/nginx/catchall.access.log";
+      backend = "polling";
+      maxretry = 2;
+    };
+
+    ## Ban bots probing common exploit paths on real vhosts
+    nginx-botsearch.settings = {
+      enabled = true;
+      filter = "nginx-botsearch";
+      port = "http,https";
+      logpath = "/var/log/nginx/access.log";
+      backend = "polling";
+    };
+
+    ## Ban clients sending malformed/garbage requests to real vhosts
+    nginx-bad-request.settings = {
+      enabled = true;
+      filter = "nginx-bad-request";
+      port = "http,https";
+      logpath = "/var/log/nginx/access.log";
+      backend = "polling";
+    };
+
+    ## Ban clients that repeatedly hit rate limits on real vhosts
+    nginx-limit-req.settings = {
+      enabled = true;
+      filter = "nginx-limit-req";
+      port = "http,https";
+      backend = "systemd";
+      journalmatch = "_SYSTEMD_UNIT=nginx.service";
+      maxretry = 5;
     };
   };
 }
@@ -713,7 +741,7 @@ in
     # Users
 
     # Services
-    "${self}/modules/reverse-proxy-nginx"
+    "${self}/modules/reverse-proxy"
 
   ];
 
@@ -910,7 +938,7 @@ in
     # Users
 
     # Services
-    "${self}/modules/reverse-proxy-caddy"
+    "${self}/modules/reverse-proxy"
 
   ];
 
