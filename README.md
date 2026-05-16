@@ -42,6 +42,7 @@ Active Development — currently being refined, expanded, and tested.
     - [X] Enable HTTP/3
     - [X] Hardened proxy connections
     - [X] Strict host matching and drop unmatched requests (e.g. no connecting unless it matches an FQDN)
+    - [X]  Rate limiting (plugin-based)
     - [X] Serve a test page
     - [X] Template for proxying future services
 - [X] Set up [Nginx](https://nginx.org/)
@@ -49,40 +50,78 @@ Active Development — currently being refined, expanded, and tested.
     - [X] Enable HTTP/3
     - [X] Hardened proxy connections
     - [X] Strict host matching and drop unmatched requests (e.g. no connecting unless it matches an FQDN)
+    - [X] Rate limiting
     - [X] Serve a test page
     - [X] Template for proxying future services
     - [X] Test [Angie](https://github.com/webserver-llc/angie) (e.g. `services.nginx.package = pkgs.angie`)
 
-*Decision: Continue testing both, with Nginx as the standard.*  
+### Decision: Standardize on Nginx (Angie). Caddy evaluation discontinued.
 
-Caddy's custom DuckDNS and rate limiting plugin build adds compile-time friction, especially on low-power ARM hosts. Nginx offers equivalent features with the mature, pre-built `lego` ACME client and better NixOS integration. Both will continue running on separate hosts during early service deployments to compare real-world behaviour before full fleet commitment. There was no notable differences between Nginx mainline and Angie. Will continue with Angie for most of the testing.
+Caddy was evaluated as a modern alternative reverse proxy and shows strong design advantages, particularly around simplicity and native integrations (e.g., ACME and middleware-based security models like CrowdSec). However, it introduces additional complexity in this environment:
+
+- Requires compiling a custom build for DNS-01 ACME challenges (DuckDNS plugin)
+- Rate limiting also requires a plugin build, increasing maintenance overhead  
+  - This may be unnecessary if relying fully on CrowdSec, which provides higher-level behavioural protection instead of per-request limiting
+- Fail2Ban support for Caddy is limited, with no widely adopted or maintained filters/jails compared to the mature ecosystem available for Nginx
+
+CrowdSec appears to align well with Caddy’s architecture (middleware and external decision engines), potentially making it a strong long-term pairing. However, the NixOS ecosystem (modules, packaging, and integrations) is not yet production-ready for this approach.
+
+In contrast, Nginx offers:
+
+- Fully declarative ACME DNS-01 via `lego` (no custom builds)
+- Native rate limiting without additional modules
+- Mature and well-documented Fail2Ban integration
+- Strong NixOS module support and reproducibility
+
+Caddy has been **retained in the repository for reference only** but is no longer being actively developed or deployed.
+
+There were no significant differences observed between Nginx mainline and Angie during testing. Angie will continue to be used, with potential future exploration of its built-in metrics and statistics capabilities (e.g. status endpoints and monitoring integration), which may support observability improvements.
 
 ## Phase 3: Security
+
 - [ ] Set up [CrowdSec](https://www.crowdsec.net/) — *on hold, NixOS module has known issues ([nixpkgs#446307](https://github.com/NixOS/nixpkgs/pull/446307))*
     - [ ] SSH protection
-    - [ ] Caddy protection
-        - [ ] Block repeated requests that don't match an FQDN (IP-only / unknown SNI)
     - [ ] Nginx protection
         - [ ] Block repeated requests that don't match an FQDN (IP-only / unknown SNI)
     - [ ] Evaluate [CrowdSec Console](https://app.crowdsec.net/) — cloud monitoring & automation dashboard
     - [ ] Evaluate [Metabase](https://www.metabase.com/) — local self-hosted dashboard (`cscli dashboard setup`)
-- [ ] Set up [Fail2Ban](https://github.com/fail2ban/fail2ban) — *only being considered because of implementation issues with CrowdSec on NixOS*
+
+- [ ] Set up [Fail2Ban](https://github.com/fail2ban/fail2ban) — *selected as the primary protection mechanism due to CrowdSec limitations on NixOS*
     - [X] SSH protection
-    - [ ] Caddy protection
-        - [ ] Block repeated requests that don't match an FQDN (IP-only / unknown SNI)
-        - [ ] Block on rate limiting
     - [X] Nginx protection
         - [X] Block repeated requests that don't match an FQDN (IP-only / unknown SNI)
         - [X] Block on rate limiting
+        - [ ] Block web traffic (including HTTP/3 / QUIC) via firewall *(not yet implemented)*
 
-&gt; **Note:** Not all evaluated tools will necessarily be implemented. Items are tracked for comparison and may be dropped based on findings.
+### Decision: Adopt Fail2Ban as Primary Control; CrowdSec Deferred
+
+CrowdSec was evaluated as a modern, collaborative security platform with strong architectural advantages over Fail2Ban, particularly in its ability to make behaviour-based decisions and share threat intelligence across instances.
+
+However, it is currently not suitable for production use in this NixOS environment due to several limitations:
+
+- The NixOS module and packaging are still immature and have known issues ([nixpkgs#446307](https://github.com/NixOS/nixpkgs/pull/446307))
+- Integration patterns (bouncers, firewall hooks, service bindings) are not well-defined or documented for NixOS
+- Reverse proxy integrations (Nginx/Caddy) require additional manual work and lack clear, reproducible configurations
+- Operational complexity is significantly higher compared to Fail2Ban, especially in a declarative setup
+
+While CrowdSec appears to align better with modern reverse proxies (particularly Caddy), the surrounding ecosystem on NixOS is not yet at a level that supports reliable, low-maintenance deployment.
+
+As a result, **Fail2Ban has been selected as the primary security control** for this environment:
+
+- Well-supported on NixOS with stable modules
+- Simple, transparent, and fully declarative
+- Tight integration with Nginx logs and systemd journald
+- Sufficient for current threat model (bots, scanners, opportunistic abuse)
+
+CrowdSec development and NixOS integration progress will continue to be monitored.  
+Thanks to everyone contributing to upstream development and NixOS support — this is an area with strong potential, and future re-evaluation is planned once the ecosystem matures.
   
 ### Phase 4: Deployment & Documentation
 - [X] Store configuration exclusively in GitHub (no local persistence)
 - [ ] Comprehensive deployment tutorial
     - [X] Install second host (`fourohm`) pulling config from GitHub
     - [X] Evaluate [nixos-anywhere](https://github.com/nix-community/nixos-anywhere)
-    - [ ] Cover installing on raspberry pi 4
+    - [X] Cover installing on raspberry pi 4
     - [ ] Cover installing on an oracle arm VPS
 
 ### Phase 5: Ideas & Modular Exploration (Optional)
@@ -124,6 +163,39 @@ Caddy's custom DuckDNS and rate limiting plugin build adds compile-time friction
 ### Phase 10: Storage & Backups
 - [ ] Storage system implementation (ZFS, Btrfs, or other RAID/NAS solutions)
 - [ ] Off-site backups
+
+## Phase 11: Monitoring & Observability
+*Goal: Gain visibility into system health, performance, and reliability across all hosts.*
+
+- [ ] Centralized metrics collection
+    - [Prometheus](https://prometheus.io/) — time-series metrics collection and querying
+    - [VictoriaMetrics](https://victoriametrics.com/) — lightweight, high-performance Prometheus alternative
+- [ ] Visualization & dashboards
+    - [Grafana](https://grafana.com/) — dashboards for system, network, and application metrics
+    - [Netdata](https://www.netdata.cloud/) — real-time monitoring with minimal setup
+- [ ] System & host monitoring
+    - Node Exporter — CPU, memory, disk, network metrics
+    - Built-in NixOS/systemd metrics (via exporters or journald integration)
+- [ ] Reverse proxy monitoring
+    - Nginx / Angie status endpoints (stub_status or extended metrics)
+    - Evaluate Angie’s enhanced metrics/statistics capabilities (future investigation)
+- [ ] Log aggregation & analysis
+    - [Loki](https://grafana.com/oss/loki/) — log aggregation (pairs well with Grafana)
+    - [Promtail](https://grafana.com/docs/loki/latest/send-data/promtail/) — log shipping agent
+    - Alternative: [Elastic Stack](https://www.elastic.co/elastic-stack/) (heavier, more complex)
+- [ ] Uptime & external monitoring
+    - [Uptime Kuma](https://github.com/louislam/uptime-kuma) — self-hosted uptime monitoring
+    - External uptime checks (optional)
+- [ ] Network & internet monitoring
+    - Existing: Speedtest CLI + InfluxDB + Grafana
+    - Extend with latency tracking (ping), packet loss, and outage detection
+- [ ] Alerting & notifications
+    - Grafana alerting
+    - Prometheus Alertmanager
+    - Email notifications (integrate with msmtp)
+    - Optional: push notifications / webhooks
+
+> **Note:** Monitoring may be overkill depending on usage and scale. The value vs. effort/complexity will be evaluated before full implementation, with a preference for minimal, high-signal visibility rather than a heavy observability stack.
 
 ---
 

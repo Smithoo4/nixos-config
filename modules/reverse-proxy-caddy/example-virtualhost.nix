@@ -17,7 +17,8 @@ in
           events 10
           window 1s
         }
-         reverse_proxy localhost:8080
+      }
+      reverse_proxy localhost:8080
     '';
   };
 }
