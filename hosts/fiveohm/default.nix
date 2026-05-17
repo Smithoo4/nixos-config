@@ -23,7 +23,7 @@
     # "${self}/users/…"
 
     # Services
-    # "${self}/modules/…"
+    "${self}/modules/reverse-proxy"
   ];
 
   # Set once at install time. Do NOT change after first boot.
