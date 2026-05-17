@@ -14,6 +14,8 @@
     "149.112.122.10"
   ];
 
+  security.sudo.wheelNeedsPassword = false;
+
   imports = [
     # Hardware
     ./hardware-configuration.nix
