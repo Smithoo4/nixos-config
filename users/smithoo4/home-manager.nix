@@ -7,6 +7,7 @@
     htop
     tree
     wget
+    dig
   ];
 
   # Git
