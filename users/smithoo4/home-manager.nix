@@ -8,6 +8,7 @@
     tree
     wget
     dig
+    openssl
   ];
 
   # Git
