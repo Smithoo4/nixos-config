@@ -627,6 +627,7 @@ in
     htop
     tree
     wget
+    dig
   ];
 
   # Git
