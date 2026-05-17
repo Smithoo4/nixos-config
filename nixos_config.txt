@@ -504,7 +504,7 @@ in
     dates = "weekly";
     options = "--delete-older-than 1w";
   };
-  nix.settings.auto-optimise-store = true;
+  nix.optimise.automatic = true;
 }
 
 --- ./modules/common/msmtp.nix ---
@@ -858,7 +858,7 @@ in
     # Users
 
     # Services
-    # "${self}/modules/reverse-proxy-nginx"
+    # "${self}/modules/reverse-proxy"
 
   ];
 

@@ -23,7 +23,7 @@
     # Users
 
     # Services
-    # "${self}/modules/reverse-proxy-nginx"
+    # "${self}/modules/reverse-proxy"
 
   ];
 
