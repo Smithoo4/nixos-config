@@ -3,6 +3,7 @@ keys:
   - &oneohm age1ucdxf60vqnpyle47dgzkrvr3pez8tkxevfl6r6nxz5pskfc3m3sqsj9rr5
   - &twoohm age1x3zya5vu3nzc9w7aclea4dt3385fte0dccj4dk0qrhnkywm4m52qf3xxyy
   - &fourohm age1k73q3tjn7pu8ftxxhefnlj6ax3jkh7mkz37y2902v8xwzwez4cnsdakqu2
+  - &fiveohm age1k73q3tjn7pu8ftxxhefnlj6ax3jkh7mkz37y2902v8xwzwez4cnsdakqu2
 
 creation_rules:
   - path_regex: secrets/.*\.yaml$
@@ -12,3 +13,4 @@ creation_rules:
           - *oneohm
           - *twoohm
           - *fourohm
+          - *fiveohm
