@@ -885,6 +885,106 @@ in
   nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
 }
 
+--- ./hosts/fiveohm/disko.nix ---
+{ ... }:
+{
+  disko.devices = {
+    disk = {
+      main = {
+        device = "/dev/disk/by-id/scsi-3603c8608f2704f5d9855725c6f13779f";
+        type = "disk";
+        content = {
+          type = "gpt";
+          partitions = {
+            ESP = {
+              type = "EF00";
+              size = "512M";
+              content = {
+                type = "filesystem";
+                format = "vfat";
+                mountpoint = "/boot";
+                mountOptions = [ "umask=0077" ];
+              };
+            };
+            root = {
+              size = "100%";
+              content = {
+                type = "filesystem";
+                format = "ext4";
+                mountpoint = "/";
+                mountOptions = [
+                  "defaults"
+                  "noatime"
+                ];
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+}
+
+--- ./hosts/fiveohm/default.nix ---
+{ self, ... }:
+{
+  # Bootloader (UEFI — Oracle ARM A1)
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.systemd-boot.configurationLimit = 10;
+  boot.loader.efi.canTouchEfiVariables = true;
+
+  # OCI: force predictable interface name (eth0) regardless of kernel enumeration order
+  boot.kernelParams = [ "net.ifnames=0" ];
+
+  # OCI: set nameservers explicitly — DHCP-provided DNS is unreliable on NixOS VPS installs
+  networking.nameservers = [
+    "149.112.121.10"
+    "149.112.122.10"
+  ];
+
+  imports = [
+    # Hardware
+    ./hardware-configuration.nix
+    ./disko.nix
+
+    # Users
+    # "${self}/users/…"
+
+    # Services
+    # "${self}/modules/…"
+  ];
+
+  # Set once at install time. Do NOT change after first boot.
+  system.stateVersion = "25.11";
+}
+
+--- ./hosts/fiveohm/hardware-configuration.nix ---
+# Placeholder derived from the existing OCI ARM VM hardware.
+# nixos-anywhere will overwrite this with a freshly generated version during install.
+{ lib, modulesPath, ... }:
+{
+  imports = [
+    (modulesPath + "/profiles/qemu-guest.nix")
+  ];
+
+  # Kernel modules from the existing OCI A1 instance — should carry over accurately
+  boot.initrd.availableKernelModules = [
+    "xhci_pci"
+    "virtio_scsi"
+  ];
+  boot.initrd.kernelModules = [ ];
+  boot.kernelModules = [ ];
+  boot.extraModulePackages = [ ];
+
+  # Filesystem mounts omitted — managed by disko
+
+  swapDevices = [ ];
+
+  networking.useDHCP = lib.mkDefault true;
+
+  nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
+}
+
 --- ./hosts/oneohm/disko.nix ---
 { ... }:
 {
@@ -1047,6 +1147,12 @@ in
           system = "x86_64-linux";
           hostname = "fourohm";
           timezone = "America/Edmonton";
+        };
+
+        fiveohm = mkHost {
+          system = "aarch64-linux";
+          hostname = "fiveohm";
+          timezone = "America/Toronto";
         };
       };
     };
