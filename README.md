@@ -12,11 +12,11 @@ Active Development — currently being refined, expanded, and tested.
 
 | Host | Status | Hardware | Purpose |
 | :--- | :--- | :--- | :--- |
-| **oneohm** | Active Development | VM | Testing and development |
+| **oneohm** | Active Development | Local VM (IncusOS) | Testing and development |
 | **twoohm** | Planned | Raspberry Pi 4 | Testing and development |
 | **threeohm** | Planned | TBD | TBD |
-| **fourohm** | Active Development | VM | Testing and development |
-| **fiveohm** | Planned | TBD | TBD |
+| **fourohm** | Active Development | Local VM (IncusOS) | Testing and development |
+| **fiveohm** | Active Development | OCI Ampere ARM VPS | Testing and development |
 
 ---
 
@@ -91,7 +91,17 @@ There were no significant differences observed between Nginx mainline and Angie 
     - [X] Nginx protection
         - [X] Block repeated requests that don't match an FQDN (IP-only / unknown SNI)
         - [X] Block on rate limiting
-        - [X] Block web traffic (including HTTP/3 / QUIC) via firewall *(not yet implemented)*
+        - [X] Block web traffic (including HTTP/3 / QUIC) via firewall
+        - [ ] Integrate [AbuseIPDB](https://www.abuseipdb.com/)
+            - [ ] Report banned IPs to AbuseIPDB (community threat intelligence contribution)
+                - Hook into high-confidence jails only (e.g. `nginx-catchall`, `sshd`)
+                - API key managed via SOPS
+            - [ ] Preemptive blocking using AbuseIPDB blacklist
+                - Daily fetch of top offenders via blacklist API (`confidenceMinimum=100`)
+                - Load into nftables set at prerouting (drops before nginx/fail2ban)
+                - Set entries auto-expire (e.g. 25h timeout) to stay fresh
+                - Systemd timer for scheduled refresh
+            - [ ] Evaluate free tier limits (1,000 checks+reports/day, 5 blacklist pulls/day, 10k IPs per pull)
 
 ### Decision: Adopt Fail2Ban as Primary Control; CrowdSec Deferred
 
@@ -118,11 +128,11 @@ Thanks to everyone contributing to upstream development and NixOS support — th
   
 ### Phase 4: Deployment & Documentation
 - [X] Store configuration exclusively in GitHub (no local persistence)
-- [ ] Comprehensive deployment tutorial
+- [X] Comprehensive deployment tutorial: [Adding a New Host with nixos-anywhere](https://github.com/Smithoo4/nixos-config/blob/main/nixos-anywhere-add-host-guide.md)
     - [X] Install second host (`fourohm`) pulling config from GitHub
     - [X] Evaluate [nixos-anywhere](https://github.com/nix-community/nixos-anywhere)
     - [X] Cover installing on raspberry pi 4
-    - [ ] Cover installing on an oracle arm VPS
+    - [X] Cover installing on an oracle arm VPS
 
 ### Phase 5: Ideas & Modular Exploration (Optional)
  - [ ] Evaluate Dynamic DNS using another provider
