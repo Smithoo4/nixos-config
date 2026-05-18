@@ -82,20 +82,21 @@ There were no significant differences observed between Nginx mainline and Angie 
 - [ ] Set up [CrowdSec](https://www.crowdsec.net/) — *on hold, NixOS module has known issues ([nixpkgs#446307](https://github.com/NixOS/nixpkgs/pull/446307))*
     - [ ] SSH protection
     - [ ] Nginx protection
+        - [ ] Default Protection
         - [ ] Block repeated requests that don't match an FQDN (IP-only / unknown SNI)
     - [ ] Evaluate [CrowdSec Console](https://app.crowdsec.net/) — cloud monitoring & automation dashboard
     - [ ] Evaluate [Metabase](https://www.metabase.com/) — local self-hosted dashboard (`cscli dashboard setup`)
 
 - [X] Set up [Fail2Ban](https://github.com/fail2ban/fail2ban) — *selected as the primary protection mechanism due to CrowdSec limitations on NixOS*
-    - [X] SSH protection
+    - [X] SSH protection (sshd)
     - [X] Nginx protection
-        - [X] Block repeated requests that don't match an FQDN (IP-only / unknown SNI)
+        - [X] Default protection (nginx-botsearch and nginx-bad-request)
+        - [X] Block repeated requests that don't match an FQDN, e.g. IP-only (nginx-catchall)
         - [X] Block on rate limiting
         - [X] Block web traffic (including HTTP/3 / QUIC) via firewall
         - [ ] Integrate [AbuseIPDB](https://www.abuseipdb.com/)
             - [ ] Report banned IPs to AbuseIPDB (community threat intelligence contribution)
                 - Hook into high-confidence jails only (e.g. `nginx-catchall`, `sshd`)
-                - API key managed via SOPS
             - [ ] Preemptive blocking using AbuseIPDB blacklist
                 - Daily fetch of top offenders via blacklist API (`confidenceMinimum=100`)
                 - Load into nftables set at prerouting (drops before nginx/fail2ban)
