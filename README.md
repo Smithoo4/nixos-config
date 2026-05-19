@@ -95,14 +95,13 @@ There were no significant differences observed between Nginx mainline and Angie 
         - [X] Block on rate limiting
         - [X] Block web traffic (including HTTP/3 / QUIC) via firewall
         - [ ] Integrate [AbuseIPDB](https://www.abuseipdb.com/)
-            - [ ] Report banned IPs to AbuseIPDB (community threat intelligence contribution)
-                - Hook into high-confidence jails only (e.g. `nginx-catchall`, `sshd`)
             - [ ] Preemptive blocking using AbuseIPDB blacklist
                 - Daily fetch of top offenders via blacklist API (`confidenceMinimum=100`)
                 - Load into nftables set at prerouting (drops before nginx/fail2ban)
                 - Set entries auto-expire (e.g. 25h timeout) to stay fresh
                 - Systemd timer for scheduled refresh
-            - [ ] Evaluate free tier limits (1,000 checks+reports/day, 5 blacklist pulls/day, 10k IPs per pull)
+            - [ ] Report banned IPs to AbuseIPDB (community threat intelligence contribution)
+                - Hook into high-confidence jails only (e.g. `nginx-catchall`, `sshd`)
 
 ### Decision: Adopt Fail2Ban as Primary Control; CrowdSec Deferred
 
