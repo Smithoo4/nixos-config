@@ -94,14 +94,10 @@ There were no significant differences observed between Nginx mainline and Angie 
         - [X] Block repeated requests that don't match an FQDN, e.g. IP-only (nginx-catchall)
         - [X] Block on rate limiting
         - [X] Block web traffic (including HTTP/3 / QUIC) via firewall
-        - [ ] Integrate [AbuseIPDB](https://www.abuseipdb.com/)
-            - [ ] Preemptive blocking using AbuseIPDB blacklist
-                - Daily fetch of top offenders via blacklist API (`confidenceMinimum=100`)
-                - Load into nftables set at prerouting (drops before nginx/fail2ban)
-                - Set entries auto-expire (e.g. 25h timeout) to stay fresh
-                - Systemd timer for scheduled refresh
-            - [ ] Report banned IPs to AbuseIPDB (community threat intelligence contribution)
-                - Hook into high-confidence jails only (e.g. `nginx-catchall`, `sshd`)
+    - [ ] Integrate [AbuseIPDB](https://www.abuseipdb.com/)
+        - [ ] Preemptive blocking using [borestad/blocklist-abuseipdb](https://github.com/borestad/blocklist-abuseipdb) — daily sync to nftables prerouting set
+        - [ ] Measure reduction in fail2ban bans after enabling preemptive blocking
+        - [ ] Report banned IPs via native fail2ban action (`abuseipdb.conf`) with per-jail category mapping
 
 ### Decision: Adopt Fail2Ban as Primary Control; CrowdSec Deferred
 
@@ -116,7 +112,7 @@ However, it is currently not suitable for production use in this NixOS environme
 
 While CrowdSec appears to align better with modern reverse proxies (particularly Caddy), the surrounding ecosystem on NixOS is not yet at a level that supports reliable, low-maintenance deployment.
 
-As a result, **Fail2Ban has been selected as the primary security control** for this environment:
+As a result, **Fail2Ban with AbuseIPDB has been selected as the primary security control** for this environment:
 
 - Well-supported on NixOS with stable modules
 - Simple, transparent, and fully declarative
