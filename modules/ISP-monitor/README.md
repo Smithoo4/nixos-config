@@ -66,10 +66,11 @@ The ISP has not been able to identify or resolve the issue.
 
 Stand up the core data collection and storage infrastructure.
 
-- [ ] Enable and configure Telegraf
-- [ ] Enable and configure VictoriaMetrics
-- [ ] Confirm Telegraf can write to VictoriaMetrics
-- [ ] Validate data is being stored and queryable
+- [x] Enable and configure Telegraf
+- [x] Enable and configure VictoriaMetrics
+- [x] Confirm Telegraf can write to VictoriaMetrics
+- [x] Validate data is being stored and queryable
+- [x] Add reverse proxy vhost for VictoriaMetrics vmui
 
 ### Phase 2: Router Metrics (End-to-End Validation)
 
