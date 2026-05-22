@@ -9,10 +9,10 @@ The ISP has not been able to identify or resolve the issue.
 
 - Capture objective performance data over time
 - Identify patterns (latency spikes, packet loss, throughput drops)
-- Provide evidence to support escalation with ISP
 - Learn and evaluate modern monitoring stacks on NixOS
 
 ---
+
 ## ISP Service Details
 
 | Detail | Value |
@@ -29,71 +29,91 @@ The ISP has not been able to identify or resolve the issue.
 
 ## Measurement (Planned)
 
-### 1. Ping Test
-
-- **Tool:** Ping command to `rogers.com`
-- **Purpose:** Connectivity validation, latency trending, packet loss detection
-
-### 2. Speed Test
-
-- **Tool:** [OOKLA Speedtest CLI](https://www.speedtest.net/apps/cli) or [fast-cli](https://github.com/sindresorhus/fast-cli#readme)
-  - OOKLA Speedtest is recommended as Roger suggests there [SPEEDTEST](https://speedtest.shaw.ca/) which is just a rebranding of OOKLA tool
-- **Purpose:** Measure actual throughput vs plan speeds (300 / 200 Mbps)
-
-### 3. Router Metrics (Archer AXE75)
+### 1. Router Metrics (Archer AXE75)
 
 - **Tool:** [`tplinkrouterc6u`](https://github.com/AlexandrErohin/TP-Link-Archer-C6U)
   - **AXE75 V1:** Confirmed supported
   - **SNMP:** Not available on this model
-  - **Purpose:** Trend metrics such as `down_speed`, `up_speed`, `tx_rate`, `rx_rate`, etc. so see if there is any correlation with data usages and if network congestion is an issue.
+- **Purpose:** Trend metrics such as `down_speed`, `up_speed`, `tx_rate`, `rx_rate`, etc. to see if there is any correlation with data usage and if network congestion is an issue.
+
+
+### 2. Ping Test
+
+- **Tool:** Ping command to `rogers.com`
+- **Purpose:** Connectivity validation, latency trending, packet loss detection
+
+### 3. Speed Test
+
+- **Tool:** [OOKLA Speedtest CLI](https://www.speedtest.net/apps/cli) or [fast-cli](https://github.com/sindresorhus/fast-cli#readme)
+  - OOKLA Speedtest is recommended as Rogers suggests their [SPEEDTEST](https://speedtest.shaw.ca/) which is just a rebranding of the OOKLA tool
+- **Purpose:** Measure actual throughput vs plan speeds (300 / 200 Mbps)
+
+---
 
 ## Builds Monitoring with [NixOS](https://nixos.org/)
-- Currently learning Nixos and this give an opportunity to apply knowledge
-- Public GitHub repository of my [nixos-confg](https://github.com/Smithoo4/nixos-config) and a summary of the all the configuration: [nixos_config.txt](https://raw.githubusercontent.com/Smithoo4/nixos-config/refs/heads/main/nixos_config.txt)
+
+- Currently learning NixOS and this gives an opportunity to apply knowledge
+- Public GitHub repository of my [nixos-config](https://github.com/Smithoo4/nixos-config) and a summary of all the configuration: [nixos_config.txt](https://raw.githubusercontent.com/Smithoo4/nixos-config/refs/heads/main/nixos_config.txt)
 - Place the configuration for the monitoring at `modules/ISP-monitor`
-- Deploy to host `oneohm` with `fourohm` being a backup to test alternate options if needed.
-- No new port are to be open in the firewall, any webUI or dashboard are to be reverse proxy with tls
+- Deploy to host `oneohm` with `fourohm` being a backup to test alternate options if needed
+- No new ports are to be opened in the firewall; any webUI or dashboard is to be reverse proxied with TLS
+
+---
 
 ## Roadmap & Implementation
 
-### Phase 1: Data Collection
+### Phase 1: Infrastructure — Telegraf + VictoriaMetrics
 
-- [ ] Set up [Telegraf](https://www.influxdata.com/time-series-platform/telegraf/) – preferred
-  - [ ] Enable Telegraf
-  - [ ] Configure **Ping Test** and identify Key Metrics
-  - [ ] Configure **Speed Test** and identify Key Metrics
-  - [ ] Configure **Router Metrics** and identify Key Metrics
-- [ ] Set up Systemd Unit and scripts for date collection – backup if issues arise with Telegraf
-  - [ ] Configure **Ping Test** and identify Key Metrics
-  - [ ] Configure **Speed Test** and identify Key Metrics
-  - [ ] Configure **Router Metrics** and identify Key Metrics
+Stand up the core data collection and storage infrastructure.
 
-### Phase 2: Data Storage (TSDB)
+- [ ] Enable and configure Telegraf
+- [ ] Enable and configure VictoriaMetrics
+- [ ] Confirm Telegraf can write to VictoriaMetrics
+- [ ] Validate data is being stored and queryable
 
-*There are three interesting options for this, if time permits all three will be run in parallels to learn each*
+### Phase 2: Router Metrics (End-to-End Validation)
 
-- [ ] [VictoriaMetrics](https://github.com/victoriametrics/VictoriaMetrics)
-    - [ ] Enable
-    - [ ] Connect to Data Collection (telegraf or systemd units and scripts)
-- [ ] [InfluxDB v2](https://docs.influxdata.com/influxdb/v2/)
-    - [ ] Enable
-    - [ ] Connect to Data Collection (telegraf or systemd units and scripts)
-- [ ] [Prometheus](https://prometheus.io/docs/introduction/overview/)
-    - [ ] Enable
-    - [ ] Connect to Data Collection (telegraf or systemd units and scripts)
+Use router metrics as the first data source to prove the full pipeline from collection through to storage.
 
-### Phase 4: Visualization & Access (Grafana)
+- [ ] Configure router metrics collection via `tplinkrouterc6u`
+- [ ] Identify key metrics to track (e.g. `down_speed`, `up_speed`, `tx_rate`, `rx_rate`)
+- [ ] Validate data flows end-to-end: collection → storage → queryable
+- [ ] Confirm data quality (timestamps, field types, no gaps)
 
-- [ ] Enable [Grafana](https://github.com/grafana/grafana)
-- [ ] Add data sources
-  - [ ] VictoriaMetrics
-  - [ ] InfluxDB V2
-  - [ ] Prometheus
-- [ ] Build ISP Health Overview dashboard (one per TSDB, identical layout)
+### Phase 3: Ping Test + Speed Test
 
-### Phase 5: Evaluation & Decision
+Add the remaining data sources to a known-good pipeline.
 
-#### Data Collection Period
+- [ ] Configure Ping Test and identify key metrics
+- [ ] Configure Speed Test and identify key metrics
+- [ ] Validate both data sources flow end-to-end
+- [ ] Confirm all three measurement types are collecting reliably
+
+### Phase 4: Visualization — Grafana
+
+Introduce visualization to validate data quality and begin trending before adding comparison complexity.
+
+- [ ] Enable Grafana
+- [ ] Add VictoriaMetrics as a data source
+- [ ] Build an ISP Health Overview dashboard covering all three measurements
+- [ ] Visually confirm data completeness and correctness
+
+### Phase 5: TSDB Comparison — InfluxDB v2 + Prometheus
+
+With all metrics stable and validated, introduce the additional TSDBs for side-by-side comparison.
+
+- [ ] Enable and configure InfluxDB v2
+- [ ] Enable and configure Prometheus
+- [ ] Connect both to Telegraf alongside VictoriaMetrics
+- [ ] Add InfluxDB v2 and Prometheus as Grafana data sources
+- [ ] Build identical ISP Health Overview dashboards for each TSDB
+- [ ] Confirm all three TSDBs are ingesting the same complete dataset
+
+### Phase 6: Evaluation & Decision
+
+Run all three TSDBs in parallel for a defined evaluation period and select one for long-term use.
+
+#### Evaluation Period
 
 - [ ] Run all three TSDBs for at least **2–4 weeks** with identical data
 
@@ -115,13 +135,21 @@ The ISP has not been able to identify or resolve the issue.
 - [ ] Decommission non-selected TSDBs
 - [ ] Document rationale
 
-### Phase 6: Optional Enhancements
+### Phase 7: Optional Enhancements
 
 - [ ] Evaluate [vmagent](https://docs.victoriametrics.com/victoriametrics/vmagent/) for advanced ingestion scenarios
 - [ ] Add email/webhook alert notifications
 - [ ] Extend monitoring to additional hosts or services
 - [ ] Build detailed per-client throughput dashboards
 - [ ] Export dashboard JSON for version control in `dashboards/`
+
+---
+
+## Fallback: Alternative Data Collection
+
+If Telegraf proves unsuitable for any of the data collection tasks, an alternative approach using **systemd timers and custom scripts** can be considered. This would require revisiting Phase 1 and may impact TSDB output configurations in subsequent phases. Evaluate on a per-measurement basis — it is possible to use Telegraf for some inputs and scripts for others.
+
+---
 
 ## References
 
