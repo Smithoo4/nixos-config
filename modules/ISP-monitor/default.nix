@@ -7,7 +7,7 @@ let
     pyproject = true;
     src = pkgs.python3Packages.fetchPypi {
       inherit pname version;
-      hash = "";
+      hash = "sha256-81gX4VvVwJkBRQUCbrzq3qJS+tsjPVF5ee7lPTxv19A=";
     };
     build-system = [ pkgs.python3Packages.setuptools ];
     propagatedBuildInputs = with pkgs.python3Packages; [
