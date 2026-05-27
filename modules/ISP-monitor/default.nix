@@ -25,9 +25,9 @@ in
     ./telegraf.nix
   ];
 
-  # CLI tools for ISP monitoring
   environment.systemPackages = [
     pkgs.jq
     routerPython
+    python312Packages.macaddress
   ];
 }
