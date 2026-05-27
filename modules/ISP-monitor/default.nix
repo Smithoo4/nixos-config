@@ -13,6 +13,7 @@ let
     propagatedBuildInputs = with pkgs.python3Packages; [
       requests
       pycryptodome
+      macaddress
     ];
     doCheck = false;
   };
@@ -28,6 +29,5 @@ in
   environment.systemPackages = [
     pkgs.jq
     routerPython
-    python312Packages.macaddress
   ];
 }
