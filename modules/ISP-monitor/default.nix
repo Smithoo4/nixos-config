@@ -4,10 +4,12 @@ let
   tplinkrouterc6u = pkgs.python3Packages.buildPythonPackage rec {
     pname = "tplinkrouterc6u";
     version = "5.21.0";
+    pyproject = true;
     src = pkgs.python3Packages.fetchPypi {
       inherit pname version;
       hash = "";
     };
+    build-system = [ pkgs.python3Packages.setuptools ];
     propagatedBuildInputs = with pkgs.python3Packages; [
       requests
       pycryptodome
