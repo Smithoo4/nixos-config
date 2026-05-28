@@ -35,8 +35,8 @@
         ];
         method = "native";
         count = 5;
-        ping_interval = "1s";
-        deadline = "10s";
+        ping_interval = 1.0;
+        deadline = 10;
         percentiles = [
           50
           95
