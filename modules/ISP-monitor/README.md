@@ -76,6 +76,7 @@ Stand up the core data collection and storage infrastructure.
 
 Use router metrics as the first data source to prove the full pipeline from collection through to storage.
 
+- [X] Install `tplinkrouterc6u`
 - [ ] Configure router metrics collection via `tplinkrouterc6u`
 - [ ] Identify key metrics to track (e.g. `down_speed`, `up_speed`, `tx_rate`, `rx_rate`)
 - [ ] Validate data flows end-to-end: collection → storage → queryable
