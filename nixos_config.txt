@@ -1,4 +1,102 @@
 
+--- ./modules/ISP-monitor/default.nix ---
+{ pkgs, ... }:
+
+let
+  tplinkrouterc6u = pkgs.python3Packages.buildPythonPackage rec {
+    pname = "tplinkrouterc6u";
+    version = "5.21.0";
+    pyproject = true;
+    src = pkgs.python3Packages.fetchPypi {
+      inherit pname version;
+      hash = "sha256-81gX4VvVwJkBRQUCbrzq3qJS+tsjPVF5ee7lPTxv19A=";
+    };
+    build-system = [ pkgs.python3Packages.setuptools ];
+    propagatedBuildInputs = with pkgs.python3Packages; [
+      requests
+      pycryptodome
+      macaddress
+    ];
+    doCheck = false;
+  };
+
+  routerPython = pkgs.python3.withPackages (_: [ tplinkrouterc6u ]);
+in
+{
+  imports = [
+    ./victoriametrics.nix
+    ./telegraf.nix
+  ];
+
+  environment.systemPackages = [
+    pkgs.jq
+    routerPython
+  ];
+}
+
+--- ./modules/ISP-monitor/telegraf.nix ---
+{ ... }:
+{
+  # Telegraf — data collection agent
+  services.telegraf = {
+    enable = true;
+    extraConfig = {
+
+      # Global agent settings
+      agent = {
+        interval = "60s";
+        flush_interval = "60s";
+      };
+
+      # Output: VictoriaMetrics via InfluxDB line protocol
+      outputs.influxdb = {
+        urls = [ "http://127.0.0.1:8428" ];
+        database = "victoriametrics";
+        skip_database_creation = true;
+        exclude_retention_policy_tag = true;
+        content_encoding = "gzip";
+      };
+
+      # Smoke test: Telegraf's own internal metrics
+      inputs.internal = {
+        collect_memstats = true;
+      };
+    };
+  };
+}
+
+--- ./modules/ISP-monitor/victoriametrics.nix ---
+{ config, ... }:
+{
+  # VictoriaMetrics — time-series database (single-node)
+
+  services.victoriametrics = {
+    enable = true;
+    listenAddress = "127.0.0.1:8428";
+    retentionPeriod = "6";
+  };
+
+  # Reverse proxy for VictoriaMetrics UI
+  services.nginx.virtualHosts."vmui.${config.networking.hostName}.duckdns.org" = {
+    forceSSL = true;
+    enableACME = true;
+    acmeRoot = null;
+    http3 = true;
+    quic = true;
+
+    extraConfig = ''
+      add_header Alt-Svc 'h3=":443"; ma=86400' always;
+    '';
+
+    locations."/" = {
+      proxyPass = "http://127.0.0.1:8428";
+      extraConfig = ''
+        limit_req zone=general burst=20 nodelay;
+      '';
+    };
+  };
+}
+
 --- ./modules/smartd.nix ---
 # Currently not in use — I only have VMs and Pi SD cards running on servers, but keeping it for future bare-metal development
 { ... }:
@@ -893,6 +991,7 @@ in
 
     # Services
     "${self}/modules/reverse-proxy"
+    "${self}/modules/ISP-monitor"
 
   ];
 
