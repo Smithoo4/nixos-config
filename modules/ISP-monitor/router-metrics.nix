@@ -98,8 +98,8 @@ let
 
             if dev_fields:
                 mac = escape_tag(d.macaddr)
-                hostname = escape_tag(d.hostname)
-                conn_type = escape_tag(d.hostname if d.hostname else d.macaddr)
+                hostname = escape_tag(d.hostname if d.hostname else d.macaddr)
+                conn_type = escape_tag(str(d.type).replace("Connection.", ""))
                 print(f"router_device,mac={mac},hostname={hostname},type={conn_type} {','.join(dev_fields)} {ts}")
 
     if __name__ == "__main__":
