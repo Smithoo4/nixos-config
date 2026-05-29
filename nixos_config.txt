@@ -51,7 +51,7 @@
   services.telegraf.extraConfig.inputs.internet_speed = {
     interval = "30m";
     memory_saving_mode = true;
-    cache = true;
+    cache = false;
     test_mode = "single";
   };
 }
