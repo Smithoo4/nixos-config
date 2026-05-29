@@ -1,6 +1,126 @@
 
+--- ./modules/ISP-monitor/ping.nix ---
+{ ... }:
+{
+  # Ping test — connectivity, latency, packet loss
+  services.telegraf.extraConfig.inputs.ping = {
+    urls = [
+      "192.168.0.1"
+      "rogers.com"
+      "1.1.1.1"
+      "bing.com"
+    ];
+    method = "native";
+    count = 5;
+    ping_interval = 1.0;
+    deadline = 10;
+    percentiles = [
+      50
+      95
+      99
+    ];
+  };
+
+  # Grant CAP_NET_RAW for native ping
+  systemd.services.telegraf.serviceConfig = {
+    CapabilityBoundingSet = [ "CAP_NET_RAW" ];
+    AmbientCapabilities = [ "CAP_NET_RAW" ];
+  };
+}
+
 --- ./modules/ISP-monitor/default.nix ---
-{ pkgs, config, ... }:
+{ pkgs, ... }:
+{
+  imports = [
+    ./victoriametrics.nix
+    ./telegraf.nix
+    ./router-metrics.nix
+    ./ping.nix
+    ./speed-test.nix
+  ];
+
+  environment.systemPackages = [
+    pkgs.jq
+  ];
+}
+
+--- ./modules/ISP-monitor/speed-test.nix ---
+{ ... }:
+{
+  # Speed test — throughput, latency, jitter, packet loss (via speedtest.net)
+  services.telegraf.extraConfig.inputs.internet_speed = {
+    interval = "30m";
+    memory_saving_mode = true;
+    cache = true;
+    test_mode = "single";
+  };
+}
+
+--- ./modules/ISP-monitor/telegraf.nix ---
+{ ... }:
+{
+  # Telegraf — data collection agent
+  services.telegraf = {
+    enable = true;
+    extraConfig = {
+
+      # Global agent settings
+      agent = {
+        interval = "60s";
+        flush_interval = "60s";
+      };
+
+      # Output: VictoriaMetrics via InfluxDB line protocol
+      outputs.influxdb = {
+        urls = [ "http://127.0.0.1:8428" ];
+        database = "victoriametrics";
+        skip_database_creation = true;
+        exclude_retention_policy_tag = true;
+        content_encoding = "gzip";
+      };
+
+      # Smoke test: Telegraf's own internal metrics
+      inputs.internal = {
+        collect_memstats = true;
+      };
+    };
+  };
+}
+
+--- ./modules/ISP-monitor/victoriametrics.nix ---
+{ config, ... }:
+{
+  # VictoriaMetrics — time-series database (single-node)
+
+  services.victoriametrics = {
+    enable = true;
+    listenAddress = "127.0.0.1:8428";
+    retentionPeriod = "6";
+  };
+
+  # Reverse proxy for VictoriaMetrics UI
+  services.nginx.virtualHosts."vmui.${config.networking.hostName}.duckdns.org" = {
+    forceSSL = true;
+    enableACME = true;
+    acmeRoot = null;
+    http3 = true;
+    quic = true;
+
+    extraConfig = ''
+      add_header Alt-Svc 'h3=":443"; ma=86400' always;
+    '';
+
+    locations."/" = {
+      proxyPass = "http://127.0.0.1:8428";
+      extraConfig = ''
+        limit_req zone=general burst=20 nodelay;
+      '';
+    };
+  };
+}
+
+--- ./modules/ISP-monitor/router-metrics.nix ---
+{ pkgs, ... }:
 
 let
   tplinkrouterc6u = pkgs.python3Packages.buildPythonPackage rec {
@@ -100,7 +220,7 @@ let
 
             if dev_fields:
                 mac = escape_tag(d.macaddr)
-                hostname = escape_tag(d.hostname)
+                hostname = escape_tag(d.hostname if d.hostname else d.macaddr)
                 conn_type = escape_tag(str(d.type).replace("Connection.", ""))
                 print(f"router_device,mac={mac},hostname={hostname},type={conn_type} {','.join(dev_fields)} {ts}")
 
@@ -109,11 +229,6 @@ let
   '';
 in
 {
-  imports = [
-    ./victoriametrics.nix
-    ./telegraf.nix
-  ];
-
   # Router credentials for polling script
   sops.secrets.router-ip = {
     owner = "telegraf";
@@ -132,73 +247,8 @@ in
     interval = "60s";
   };
 
-  environment.systemPackages = [
-    pkgs.jq
-    routerPython
-  ];
-}
-
---- ./modules/ISP-monitor/telegraf.nix ---
-{ ... }:
-{
-  # Telegraf — data collection agent
-  services.telegraf = {
-    enable = true;
-    extraConfig = {
-
-      # Global agent settings
-      agent = {
-        interval = "60s";
-        flush_interval = "60s";
-      };
-
-      # Output: VictoriaMetrics via InfluxDB line protocol
-      outputs.influxdb = {
-        urls = [ "http://127.0.0.1:8428" ];
-        database = "victoriametrics";
-        skip_database_creation = true;
-        exclude_retention_policy_tag = true;
-        content_encoding = "gzip";
-      };
-
-      # Smoke test: Telegraf's own internal metrics
-      inputs.internal = {
-        collect_memstats = true;
-      };
-    };
-  };
-}
-
---- ./modules/ISP-monitor/victoriametrics.nix ---
-{ config, ... }:
-{
-  # VictoriaMetrics — time-series database (single-node)
-
-  services.victoriametrics = {
-    enable = true;
-    listenAddress = "127.0.0.1:8428";
-    retentionPeriod = "6";
-  };
-
-  # Reverse proxy for VictoriaMetrics UI
-  services.nginx.virtualHosts."vmui.${config.networking.hostName}.duckdns.org" = {
-    forceSSL = true;
-    enableACME = true;
-    acmeRoot = null;
-    http3 = true;
-    quic = true;
-
-    extraConfig = ''
-      add_header Alt-Svc 'h3=":443"; ma=86400' always;
-    '';
-
-    locations."/" = {
-      proxyPass = "http://127.0.0.1:8428";
-      extraConfig = ''
-        limit_req zone=general burst=20 nodelay;
-      '';
-    };
-  };
+  # Make routerPython available for interactive debugging
+  environment.systemPackages = [ routerPython ];
 }
 
 --- ./modules/smartd.nix ---
