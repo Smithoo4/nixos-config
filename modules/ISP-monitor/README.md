@@ -87,9 +87,9 @@ Use router metrics as the first data source to prove the full pipeline from coll
 Add the remaining data sources to a known-good pipeline.
 
 - [x] Configure Ping Test and identify key metrics
-- [x] Configure Speed Test and identify key metrics
+- [ ] ~~Configure Speed Test and identify key metrics~~ - deferred (not needed for connection loss detection)
 - [x] Validate both data sources flow end-to-end
-- [ ] Confirm all three measurement types are collecting reliably
+- [x] Confirm all three measurement types are collecting reliably
 
 ### Phase 4: Visualization — Grafana
 
