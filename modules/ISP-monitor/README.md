@@ -76,17 +76,17 @@ Stand up the core data collection and storage infrastructure.
 
 Use router metrics as the first data source to prove the full pipeline from collection through to storage.
 
-- [X] Install `tplinkrouterc6u`
-- [ ] Configure router metrics collection via `tplinkrouterc6u`
-- [ ] Identify key metrics to track (e.g. `down_speed`, `up_speed`, `tx_rate`, `rx_rate`)
-- [ ] Validate data flows end-to-end: collection → storage → queryable
-- [ ] Confirm data quality (timestamps, field types, no gaps)
+- [x] Install `tplinkrouterc6u`
+- [X] Configure router metrics collection via `tplinkrouterc6u`
+- [x] Identify key metrics to track (e.g. `down_speed`, `up_speed`, `tx_rate`, `rx_rate`)
+- [x] Validate data flows end-to-end: collection → storage → queryable
+- [x] Confirm data quality (timestamps, field types, no gaps)
 
 ### Phase 3: Ping Test + Speed Test
 
 Add the remaining data sources to a known-good pipeline.
 
-- [ ] Configure Ping Test and identify key metrics
+- [x] Configure Ping Test and identify key metrics
 - [ ] Configure Speed Test and identify key metrics
 - [ ] Validate both data sources flow end-to-end
 - [ ] Confirm all three measurement types are collecting reliably
