@@ -31,7 +31,7 @@
           "192.168.0.1"
           "rogers.com"
           "1.1.1.1"
-          "bing.com"
+          "google.com"
         ];
         method = "native";
         count = 5;
