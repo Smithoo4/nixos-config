@@ -5,7 +5,7 @@
     ./telegraf.nix
     ./router-metrics.nix
     ./ping.nix
-    # ./speed-test.nix      # Phase 3 — coming soon
+    ./speed-test.nix
   ];
 
   environment.systemPackages = [
