@@ -34,6 +34,15 @@
           isDefault = true;
         }
       ];
+
+      # Provision dashboards from repo
+      dashboards.settings.providers = [
+        {
+          name = "ISP Monitor";
+          options.path = "${./dashboards}";
+          disableDeletion = true;
+        }
+      ];
     };
   };
 
