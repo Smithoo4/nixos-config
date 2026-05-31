@@ -9,7 +9,14 @@ The ISP has not been able to identify or resolve the issue.
 
 - Capture objective performance data over time
 - Identify patterns (latency spikes, packet loss, throughput drops)
-- Learn and evaluate modern monitoring stacks on NixOS
+
+---
+
+## Outcome
+
+Rogers identified and replaced damaged coaxial cable running to the house, which resolved the intermittent connectivity issues.
+
+This monitoring module will remain active on `oneohm` for now to confirm the fix holds. It may be decommissioned in the future if monitoring is no longer needed or if `oneohm` is repurposed for another use.
 
 ---
 
@@ -27,129 +34,154 @@ The ISP has not been able to identify or resolve the issue.
 
 ---
 
-## Measurement (Planned)
+## Measurement
 
-### 1. Router Metrics (Archer AXE75)
+### 1. Router Metrics
 
-- **Tool:** [`tplinkrouterc6u`](https://github.com/AlexandrErohin/TP-Link-Archer-C6U)
-  - **AXE75 V1:** Confirmed supported
-  - **SNMP:** Not available on this model
-- **Purpose:** Trend metrics such as `down_speed`, `up_speed`, `tx_rate`, `rx_rate`, etc. to see if there is any correlation with data usage and if network congestion is an issue.
+- **Tool:** [`tplinkrouterc6u`](https://github.com/AlexandrErohin/TP-Link-Archer-C6U) Python library, called via a custom polling script
+- **Telegraf Input:** `inputs.exec` — script outputs InfluxDB line protocol to stdout
+- **Polling Interval:** 60 seconds
+- **Note:** SNMP is not available on the Archer AXE75, so the router's web API is used instead. Each poll performs a full HTTP login/logout cycle. 60s was chosen to balance data resolution against session overhead (the router only supports one admin session at a time).
 
+#### Router-Level Metrics (`router_status`)
+
+| Metric | Type | Description |
+|---|---|---|
+| `router_status_cpu_usage` | float (0–1) | Router CPU utilization |
+| `router_status_mem_usage` | float (0–1) | Router memory utilization |
+| `router_status_wan_uptime` | integer (seconds) | WAN connection uptime — resets indicate ISP dropouts |
+| `router_status_clients_total` | integer | Total connected clients |
+| `router_status_wired_total` | integer | Wired clients |
+| `router_status_wifi_clients_total` | integer | WiFi clients |
+| `router_status_guest_clients_total` | integer | Guest network clients |
+| `router_status_total_traffic` | integer (bytes) | Summed `traffic_usage` across all devices |
+
+**Tags:** `host`
+
+#### Per-Device Metrics (`router_device`)
+
+| Metric | Type | Availability | Description |
+|---|---|---|---|
+| `router_device_traffic_usage` | integer (bytes) | All devices | Cumulative bytes — use `rate()` in Grafana for throughput |
+| `router_device_signal` | integer (dBm) | WiFi only | RSSI signal strength |
+| `router_device_packets_sent` | integer | WiFi only | Cumulative packets sent |
+| `router_device_packets_received` | integer | WiFi only | Cumulative packets received |
+
+**Tags:** `host`, `mac`, `hostname`, `type`
+
+> **Note:** Devices with an empty hostname are tagged with their MAC address as a fallback. Three devices on the network report as `network device` — the `mac` tag ensures unique series.
+
+---
 
 ### 2. Ping Test
 
-- **Tool:** Ping command to `rogers.com`
-- **Purpose:** Connectivity validation, latency trending, packet loss detection
+- **Tool:** Telegraf built-in [`inputs.ping`](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/ping) plugin
+- **Method:** `native` (Go-native ICMP, requires `CAP_NET_RAW`)
+- **Polling Interval:** 60 seconds
+- **Pings Per Cycle:** 5
+- **Targets:**
 
-### 3. Speed Test
-
-- **Tool:** [OOKLA Speedtest CLI](https://www.speedtest.net/apps/cli) or [fast-cli](https://github.com/sindresorhus/fast-cli#readme)
-  - OOKLA Speedtest is recommended as Rogers suggests their [SPEEDTEST](https://speedtest.shaw.ca/) which is just a rebranding of the OOKLA tool
-- **Purpose:** Measure actual throughput vs plan speeds (300 / 200 Mbps)
-
----
-
-## Builds Monitoring with [NixOS](https://nixos.org/)
-
-- Currently learning NixOS and this gives an opportunity to apply knowledge
-- Public GitHub repository of my [nixos-config](https://github.com/Smithoo4/nixos-config) and a summary of all the configuration: [nixos_config.txt](https://raw.githubusercontent.com/Smithoo4/nixos-config/refs/heads/main/nixos_config.txt)
-- Place the configuration for the monitoring at `modules/ISP-monitor`
-- Deploy to host `oneohm` with `fourohm` being a backup to test alternate options if needed
-- No new ports are to be opened in the firewall; any webUI or dashboard is to be reverse proxied with TLS
-
----
-
-## Roadmap & Implementation
-
-### Phase 1: Infrastructure — Telegraf + VictoriaMetrics
-
-Stand up the core data collection and storage infrastructure.
-
-- [x] Enable and configure Telegraf
-- [x] Enable and configure VictoriaMetrics
-- [x] Confirm Telegraf can write to VictoriaMetrics
-- [x] Validate data is being stored and queryable
-- [x] Add reverse proxy vhost for VictoriaMetrics vmui
-
-### Phase 2: Router Metrics (End-to-End Validation)
-
-Use router metrics as the first data source to prove the full pipeline from collection through to storage.
-
-- [x] Install `tplinkrouterc6u`
-- [X] Configure router metrics collection via `tplinkrouterc6u`
-- [x] Identify key metrics to track (e.g. `down_speed`, `up_speed`, `tx_rate`, `rx_rate`)
-- [x] Validate data flows end-to-end: collection → storage → queryable
-- [x] Confirm data quality (timestamps, field types, no gaps)
-
-### Phase 3: Ping Test + Speed Test
-
-Add the remaining data sources to a known-good pipeline.
-
-- [x] Configure Ping Test and identify key metrics
-- [ ] ~~Configure Speed Test and identify key metrics~~ - deferred (not needed for connection loss detection)
-- [x] Validate both data sources flow end-to-end
-- [x] Confirm all three measurement types are collecting reliably
-
-### Phase 4: Visualization — Grafana
-
-Introduce visualization to validate data quality and begin trending before adding comparison complexity.
-
-- [X] Enable Grafana
-- [X] Add VictoriaMetrics as a data source
-- [X] Build an ISP Health Overview dashboard covering all three measurements
-- [X] Visually confirm data completeness and correctness
-
-### Phase 5: TSDB Comparison — InfluxDB v2 + Prometheus
-
-With all metrics stable and validated, introduce the additional TSDBs for side-by-side comparison.
-
-- [ ] Enable and configure InfluxDB v2
-- [ ] Enable and configure Prometheus
-- [ ] Connect both to Telegraf alongside VictoriaMetrics
-- [ ] Add InfluxDB v2 and Prometheus as Grafana data sources
-- [ ] Build identical ISP Health Overview dashboards for each TSDB
-- [ ] Confirm all three TSDBs are ingesting the same complete dataset
-
-### Phase 6: Evaluation & Decision
-
-Run all three TSDBs in parallel for a defined evaluation period and select one for long-term use.
-
-#### Evaluation Period
-
-- [ ] Run all three TSDBs for at least **2–4 weeks** with identical data
-
-#### Evaluation Criteria
-
-| Criteria | How to Measure |
+| Target | Purpose |
 |---|---|
-| **RAM usage** | `systemctl status` or `ps aux` per component |
-| **Disk usage** | `du -sh /var/lib/{victoriametrics,prometheus,influxdb2}` |
-| **Query speed** | Time a full dashboard load (browser dev tools → network tab) |
-| **Config complexity** | Lines of Nix code per stack |
-| **Data completeness** | Count data points per TSDB over the same time period |
-| **Query language UX** | Subjective — which feels most natural to write and debug? |
-| **Operational friction** | Subjective — setup effort, maintenance, and debugging experience |
+| `192.168.0.1` | Router — rules out local network issues |
+| `rogers.com` | ISP — first hop that matters |
+| `1.1.1.1` | Cloudflare DNS — low-latency external baseline |
+| `bing.com` | External baseline — DNS + routing |
 
-#### Final Decision
+#### Ping Metrics
 
-- [ ] Select TSDB for long-term use
-- [ ] Decommission non-selected TSDBs
-- [ ] Document rationale
+| Metric | Type | Description |
+|---|---|---|
+| `ping_average_response_ms` | float | Mean round-trip time |
+| `ping_minimum_response_ms` | float | Minimum RTT |
+| `ping_maximum_response_ms` | float | Maximum RTT |
+| `ping_percentile50_ms` | float | 50th percentile RTT |
+| `ping_percentile95_ms` | float | 95th percentile RTT |
+| `ping_percentile99_ms` | float | 99th percentile RTT |
+| `ping_standard_deviation_ms` | float | RTT standard deviation |
+| `ping_packets_transmitted` | integer | Pings sent |
+| `ping_packets_received` | integer | Pings returned |
+| `ping_percent_packet_loss` | float | Packet loss percentage |
+| `ping_result_code` | integer | 0 = success, 1 = no host, 2 = error |
+| `ping_ttl` | integer | Time to live |
 
-### Phase 7: Optional Enhancements
-
-- [ ] Evaluate [vmagent](https://docs.victoriametrics.com/victoriametrics/vmagent/) for advanced ingestion scenarios
-- [ ] Add email/webhook alert notifications
-- [ ] Extend monitoring to additional hosts or services
-- [ ] Build detailed per-client throughput dashboards
-- [ ] Export dashboard JSON for version control in `dashboards/`
+**Tags:** `host`, `url`
 
 ---
 
-## Fallback: Alternative Data Collection
+### 3. Speed Test (Disabled)
 
-If Telegraf proves unsuitable for any of the data collection tasks, an alternative approach using **systemd timers and custom scripts** can be considered. This would require revisiting Phase 1 and may impact TSDB output configurations in subsequent phases. Evaluate on a per-measurement basis — it is possible to use Telegraf for some inputs and scripts for others.
+- **Tool:** Telegraf built-in [`inputs.internet_speed`](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/internet_speed) plugin
+- **Status:** Disabled — config kept at `speed-test.nix` but not imported
+
+#### Why It Was Disabled
+
+1. **Cached dead server:** With `cache = true`, the plugin locked onto a defunct Shaw Calgary server (`speedtest.cg.shawcable.net`) and never re-evaluated, causing every test to fail
+2. **VM instability:** The speed test transfers hundreds of MB per run, which correlated with VM crashes on the Incus hypervisor (though not conclusively proven)
+3. **DNS resolution failures:** During actual connectivity outages, the plugin couldn't resolve `speedtest.net` to discover servers, compounding the failure
+
+The ping test and `router_status_wan_uptime` provide sufficient outage detection for the current use case. Speed testing can be revisited if throughput trending becomes a priority.
+
+---
+
+## Implementation Stack
+
+| Component | Role | Config File |
+|---|---|---|
+| **NixOS** | Host OS (deployed to `oneohm` VM on Incus) | `hosts/oneohm/default.nix` |
+| **Telegraf** | Data collection agent | `telegraf.nix` |
+| **VictoriaMetrics** | Time-series database (single-node, 6-month retention) | `victoriametrics.nix` |
+| **Grafana** | Visualization and dashboards | `grafana.nix` |
+| **sops-nix** | Secrets management (router credentials, Grafana admin password) | Referenced in `router-metrics.nix`, `grafana.nix` |
+| **Nginx (Angie)** | Reverse proxy with TLS (ACME/DuckDNS) | `modules/reverse-proxy/` |
+
+### Module Structure
+
+```
+modules/ISP-monitor/
+├── dashboards/
+│   └── isp-health-overview.json    # Exported from Grafana
+├── default.nix                     # Imports — toggle features here
+├── grafana.nix                     # Grafana + datasource + dashboard provisioning
+├── ping.nix                        # Ping test (inputs.ping + CAP_NET_RAW)
+├── router-metrics.nix              # Router polling (tplinkrouterc6u + sops + inputs.exec)
+├── speed-test.nix                  # Speed test (disabled — not imported)
+├── telegraf.nix                    # Base Telegraf config (agent, output, internal)
+└── victoriametrics.nix             # VictoriaMetrics + reverse proxy vhost
+```
+
+### Access
+
+| Service | URL |
+|---|---|
+| Grafana | `https://grafana.oneohm.duckdns.org/` |
+| VictoriaMetrics UI | `https://vmui.oneohm.duckdns.org/vmui/` |
+
+---
+
+## Grafana Dashboard Workflow
+
+Dashboards are provisioned declaratively from JSON files in the `dashboards/` directory. To update a dashboard:
+
+1. **Edit** the dashboard in the Grafana UI
+2. **Save** changes in Grafana (this saves to the Grafana database, not your repo)
+3. **Export:** Dashboard → Share → Export → toggle **Export for sharing externally** → **Save to file**
+4. **Replace** the JSON file in `modules/ISP-monitor/dashboards/`
+5. **Commit and push** to the repo
+6. **Rebuild:** `nixos-rebuild switch` — Grafana picks up the updated JSON on restart
+
+> **Note:** Provisioned dashboards appear as read-only in the Grafana UI. To edit, make changes and re-export — the source of truth is always the JSON in the repo.
+
+---
+
+## Future Considerations
+
+- [ ] **TSDB comparison:** Evaluate InfluxDB (v2 or v3) and/or Prometheus as alternatives to VictoriaMetrics
+- [ ] **Alerting:** Add email or webhook notifications for sustained packet loss or WAN uptime resets
+- [ ] **SNMP-capable router:** If the Archer AXE75 is replaced, look for a router with SNMP support for direct Telegraf integration via `inputs.snmp` — eliminating the custom polling script
+- [ ] **Speed test revisit:** Re-enable with a lighter approach (e.g. Ookla CLI via `inputs.exec` with reduced thread count) if throughput trending becomes a priority
+- [ ] **Per-client throughput dashboards:** Use `rate(router_device_traffic_usage[5m])` derivatives for detailed per-device bandwidth analysis
+- [ ] **Dashboard version control:** Export dashboard JSON after significant changes to keep the repo in sync
 
 ---
 
@@ -159,20 +191,14 @@ If Telegraf proves unsuitable for any of the data collection tasks, an alternati
 |---|---|
 | VictoriaMetrics docs | https://docs.victoriametrics.com/ |
 | VictoriaMetrics NixOS options | `services.victoriametrics` in nixpkgs |
-| InfluxDB v2 docs | https://docs.influxdata.com/influxdb/v2/ |
-| InfluxDB v2 NixOS options | `services.influxdb2` in nixpkgs |
-| Prometheus docs | https://prometheus.io/docs/ |
-| Prometheus NixOS options | `services.prometheus` in nixpkgs |
 | Telegraf docs | https://docs.influxdata.com/telegraf/ |
 | Telegraf `inputs.ping` | https://github.com/influxdata/telegraf/tree/master/plugins/inputs/ping |
 | Telegraf `inputs.internet_speed` | https://github.com/influxdata/telegraf/tree/master/plugins/inputs/internet_speed |
 | Telegraf `inputs.exec` | https://github.com/influxdata/telegraf/tree/master/plugins/inputs/exec |
 | Telegraf `outputs.influxdb` | https://github.com/influxdata/telegraf/tree/master/plugins/outputs/influxdb |
-| Telegraf `outputs.influxdb_v2` | https://github.com/influxdata/telegraf/tree/master/plugins/outputs/influxdb_v2 |
-| Telegraf `outputs.prometheus_client` | https://github.com/influxdata/telegraf/tree/master/plugins/outputs/prometheus_client |
 | tplinkrouterc6u | https://github.com/AlexandrErohin/TP-Link-Archer-C6U |
 | Grafana docs | https://grafana.com/docs/grafana/latest/ |
 | Grafana NixOS options | `services.grafana` in nixpkgs |
 | sops-nix | https://github.com/Mic92/sops-nix |
-| Rogers Internet Plans | https://www.rogers.com/internet/plans |
 | Archer AXE75 | https://www.tp-link.com/us/home-networking/wifi-router/archer-axe75/ |
+| nixos-config repo | https://github.com/Smithoo4/nixos-config |
