@@ -95,10 +95,10 @@ Add the remaining data sources to a known-good pipeline.
 
 Introduce visualization to validate data quality and begin trending before adding comparison complexity.
 
-- [ ] Enable Grafana
-- [ ] Add VictoriaMetrics as a data source
-- [ ] Build an ISP Health Overview dashboard covering all three measurements
-- [ ] Visually confirm data completeness and correctness
+- [X] Enable Grafana
+- [X] Add VictoriaMetrics as a data source
+- [X] Build an ISP Health Overview dashboard covering all three measurements
+- [X] Visually confirm data completeness and correctness
 
 ### Phase 5: TSDB Comparison — InfluxDB v2 + Prometheus
 
