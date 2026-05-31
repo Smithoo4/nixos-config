@@ -12,8 +12,8 @@ Active Development — currently being refined, expanded, and tested.
 
 | Host | Status | Hardware | Purpose |
 | :--- | :--- | :--- | :--- |
-| **oneohm** | Active Development | Local VM (IncusOS) | Testing and development |
-| **twoohm** | Planned | Raspberry Pi 4 | Testing and development |
+| **oneohm** | Active Development | Local VM (IncusOS) | ISP-monitor |
+| **twoohm** | Tested, but not in uses (never got wifi working) | Raspberry Pi 4 | TBD|
 | **threeohm** | Planned | TBD | TBD |
 | **fourohm** | Active Development | Local VM (IncusOS) | Testing and development |
 | **fiveohm** | Active Development | OCI Ampere ARM VPS | Testing and development |
