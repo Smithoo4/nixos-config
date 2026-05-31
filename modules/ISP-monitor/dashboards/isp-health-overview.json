@@ -519,12 +519,12 @@
     "list": []
   },
   "time": {
-    "from": "2026-05-30T12:14:17.783Z",
-    "to": "2026-05-30T18:14:22.604Z"
+    "from": "now-6h",
+    "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "ISP Health Overview",
   "uid": "ad78dv9",
-  "version": 13
+  "version": 15
 }
