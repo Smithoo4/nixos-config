@@ -893,16 +893,18 @@ let
     TMPDIR=$(mktemp -d)
     trap 'rm -rf "$TMPDIR"' EXIT
 
+    RAW="$TMPDIR/raw.txt"
     LIST="$TMPDIR/list.txt"
     SCRIPT="$TMPDIR/nft.conf"
 
     echo "Downloading AbuseIPDB blocklist..."
     ${pkgs.curl}/bin/curl -sSf --retry 3 --retry-delay 30 --max-time 120 \
-      -o "$LIST" "${listUrl}"
+      -o "$RAW" "${listUrl}"
 
-    # Validate — must contain at least 1000 IPs (sanity check against
-    # empty or corrupted downloads)
-    COUNT=$(${pkgs.gnugrep}/bin/grep -cE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' "$LIST" || true)
+    # Extract IPs — skip comments/blanks, take first field
+    ${pkgs.gawk}/bin/awk '/^[0-9]/ { print $1 }' "$RAW" > "$LIST"
+
+    COUNT=$(wc -l < "$LIST")
     if [ "$COUNT" -lt 1000 ]; then
       echo "ERROR: only $COUNT IPs found (expected 1000+). Aborting." >&2
       exit 1
@@ -912,8 +914,7 @@ let
     {
       echo "flush set inet $TABLE $SET"
       echo "add element inet $TABLE $SET {"
-      ${pkgs.gnugrep}/bin/grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' "$LIST" \
-        | ${pkgs.gnused}/bin/sed 's/$/,/'
+      ${pkgs.gnused}/bin/sed 's/$/,/' "$LIST"
       echo "}"
     } > "$SCRIPT"
 
