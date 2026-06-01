@@ -13,6 +13,7 @@
     ./auto-upgrade.nix
     ./nix-maintenance.nix
     ./fail2ban.nix
+    ./abuseipdb-blocklist.nix
   ];
 
   # zram
