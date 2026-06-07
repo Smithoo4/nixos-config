@@ -6,6 +6,12 @@
     mode = "0400";
   };
 
+  # Grafana Secret key
+  sops.secrets.grafana-secret-key = {
+    owner = "grafana";
+    mode = "0400";
+  };
+
   services.grafana = {
     enable = true;
     settings = {
@@ -19,6 +25,7 @@
       security = {
         admin_user = "admin";
         admin_password = "$__file{${config.sops.secrets.grafana-admin-password.path}}";
+        secret_key = "$__file{${config.sops.secrets.grafana-secret-key.path}}";
       };
       analytics.reporting_enabled = false;
     };
