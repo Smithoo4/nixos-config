@@ -25,7 +25,9 @@
       backend = "polling";
       maxretry = 2;
       # Categories: 14 = Port Scan, 19 = Bad Web Bot
-      action = "%(action_)s\n         abuseipdb[abuseipdb_category=\"14,19\"]";
+      action = ''
+        %(action_)s
+                         abuseipdb[abuseipdb_apikey="$(cat /run/secrets/abuseipdb-apikey)", abuseipdb_category="14,19"]'';
     };
 
     ## Ban bots probing common exploit paths on real vhosts
@@ -37,7 +39,9 @@
       logpath = "/var/log/nginx/access.log";
       backend = "polling";
       # Categories: 21 = Web App Attack, 19 = Bad Web Bot
-      action = "%(action_)s\n         abuseipdb[abuseipdb_category=\"21,19\"]";
+      action = ''
+        %(action_)s
+                         abuseipdb[abuseipdb_apikey="$(cat /run/secrets/abuseipdb-apikey)", abuseipdb_category="21,19"]'';
     };
 
     ## Ban clients sending malformed/garbage requests to real vhosts
@@ -49,7 +53,9 @@
       logpath = "/var/log/nginx/access.log";
       backend = "polling";
       # Categories: 19 = Bad Web Bot, 15 = Hacking
-      action = "%(action_)s\n         abuseipdb[abuseipdb_category=\"19,15\"]";
+      action = ''
+        %(action_)s
+                        abuseipdb[abuseipdb_apikey="$(cat /run/secrets/abuseipdb-apikey)", abuseipdb_category="19,15"]'';
     };
 
     ## Ban clients that repeatedly hit rate limits on real vhosts
@@ -62,7 +68,9 @@
       journalmatch = "_SYSTEMD_UNIT=nginx.service";
       maxretry = 5;
       # Categories: 19 = Bad Web Bot
-      action = "%(action_)s\n         abuseipdb[abuseipdb_category=\"19\"]";
+      action = ''
+        %(action_)s
+                        abuseipdb[abuseipdb_apikey="$(cat /run/secrets/abuseipdb-apikey)", abuseipdb_category="19"]'';
     };
   };
 }
