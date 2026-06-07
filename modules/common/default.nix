@@ -14,6 +14,7 @@
     ./nix-maintenance.nix
     ./fail2ban.nix
     ./abuseipdb-blocklist.nix
+    ./abuseipdb-report.nix
   ];
 
   # zram

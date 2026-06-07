@@ -96,7 +96,7 @@ There were no significant differences observed between Nginx mainline and Angie 
         - [X] Block web traffic (including HTTP/3 / QUIC) via firewall
     - [ ] Integrate [AbuseIPDB](https://www.abuseipdb.com/)
         - [X] Preemptive blocking using [borestad/blocklist-abuseipdb](https://github.com/borestad/blocklist-abuseipdb) — daily sync to nftables prerouting set
-        - [ ] Measure reduction in fail2ban bans after enabling preemptive blocking
+        - [X] Measure reduction in fail2ban bans after enabling preemptive blocking
         - [ ] Report banned IPs via native fail2ban action (`abuseipdb.conf`) with per-jail category mapping
 
 ### Decision: Adopt Fail2Ban as Primary Control; CrowdSec Deferred
