@@ -62,7 +62,7 @@
       journalmatch = "_SYSTEMD_UNIT=nginx.service";
       maxretry = 5;
       # Categories: 19 = Bad Web Bot
-      action = "%(action_)s\n         abuseipdb[abuseipdb_category=\"19\"]
+      action = "%(action_)s\n         abuseipdb[abuseipdb_category=\"19\"];
     };
   };
 }
