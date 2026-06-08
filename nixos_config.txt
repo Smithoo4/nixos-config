@@ -751,7 +751,7 @@ in
       # Categories: 14 = Port Scan, 19 = Bad Web Bot
       action = ''
         %(action_)s
-                         abuseipdb[abuseipdb_apikey="$(cat /run/secrets/abuseipdb-apikey)", abuseipdb_category="14,19"]'';
+                         abuseipdb[abuseipdb_category="14,19"]'';
     };
 
     ## Ban bots probing common exploit paths on real vhosts
@@ -765,7 +765,7 @@ in
       # Categories: 21 = Web App Attack, 19 = Bad Web Bot
       action = ''
         %(action_)s
-                         abuseipdb[abuseipdb_apikey="$(cat /run/secrets/abuseipdb-apikey)", abuseipdb_category="21,19"]'';
+                         abuseipdb[abuseipdb_category="21,19"]'';
     };
 
     ## Ban clients sending malformed/garbage requests to real vhosts
@@ -779,7 +779,7 @@ in
       # Categories: 19 = Bad Web Bot, 15 = Hacking
       action = ''
         %(action_)s
-                        abuseipdb[abuseipdb_apikey="$(cat /run/secrets/abuseipdb-apikey)", abuseipdb_category="19,15"]'';
+                         abuseipdb[abuseipdb_category="19,15"]'';
     };
 
     ## Ban clients that repeatedly hit rate limits on real vhosts
@@ -794,7 +794,7 @@ in
       # Categories: 19 = Bad Web Bot
       action = ''
         %(action_)s
-                        abuseipdb[abuseipdb_apikey="$(cat /run/secrets/abuseipdb-apikey)", abuseipdb_category="19"]'';
+                         abuseipdb[abuseipdb_category="19"]'';
     };
   };
 }
@@ -918,99 +918,43 @@ in
 --- ./modules/common/abuseipdb-blocklist.nix ---
 { pkgs, ... }:
 
-let
-  # Blocklist: abuseipdb-s100-30d.ipv4
-  #   - 100% confidence score, 30-day window (~127k IPs)
-  #   - Recommended by borestad (≤30d avoids false positives)
-  #   - https://github.com/borestad/blocklist-abuseipdb
-  listUrl = "https://raw.githubusercontent.com/borestad/blocklist-abuseipdb/main/abuseipdb-s100-30d.ipv4";
-
-  updateScript = pkgs.writeShellScript "update-abuseipdb-blocklist" ''
-    set -euo pipefail
-
-    TABLE="blocklist"
-    SET="abuseipdb-v4"
-    TMPDIR=$(mktemp -d)
-    trap 'rm -rf "$TMPDIR"' EXIT
-
-    RAW="$TMPDIR/raw.txt"
-    LIST="$TMPDIR/list.txt"
-    SCRIPT="$TMPDIR/nft.conf"
-
-    echo "Downloading AbuseIPDB blocklist..."
-    ${pkgs.curl}/bin/curl -sSf --retry 3 --retry-delay 30 --max-time 120 \
-      -o "$RAW" "${listUrl}"
-
-    # Extract IPs — skip comments/blanks, take first field
-    ${pkgs.gawk}/bin/awk '/^[0-9]/ { print $1 }' "$RAW" > "$LIST"
-
-    COUNT=$(wc -l < "$LIST")
-    if [ "$COUNT" -lt 1000 ]; then
-      echo "ERROR: only $COUNT IPs found (expected 1000+). Aborting." >&2
-      exit 1
-    fi
-
-    echo "Building nft script for $COUNT IPs..."
-    {
-      echo "flush set inet $TABLE $SET"
-      echo "add element inet $TABLE $SET {"
-      ${pkgs.gnused}/bin/sed 's/$/,/' "$LIST"
-      echo "}"
-    } > "$SCRIPT"
-
-    echo "Loading blocklist into nftables..."
-    ${pkgs.nftables}/bin/nft -f "$SCRIPT"
-
-    echo "Done. $COUNT IPs loaded into inet $TABLE/$SET."
-  '';
-in
 {
-  # ── nftables table: empty set + prerouting drop chain ──────────────
-  #
-  # The set is declared empty here and populated by the systemd service.
-  # Prerouting at raw priority (-300) drops packets before conntrack,
-  # the NixOS firewall, and fail2ban ever process them.
-  networking.nftables.tables.blocklist = {
-    family = "inet";
-    content = ''
-      set abuseipdb-v4 {
-        type ipv4_addr
-        flags interval
-      }
+  # AbuseIPDB API key for fail2ban reporting
+  sops.secrets.abuseipdb-apikey = { };
 
-      chain prerouting {
-        type filter hook prerouting priority raw; policy accept;
-        ip saddr @abuseipdb-v4 counter drop
-      }
-    '';
-  };
+  # Custom fail2ban action
+  # Reads API key from sops secret at runtime.
+  # Based on upstream abuseipdb.conf with NixOS-specific adaptations.
+  # Categories: https://www.abuseipdb.com/categories
+  environment.etc."fail2ban/action.d/abuseipdb.conf".text = ''
+    [Definition]
+    norestored = 1
 
-  # ── Oneshot service: download and load the blocklist ───────────────
-  systemd.services.abuseipdb-blocklist = {
-    description = "Download and load AbuseIPDB blocklist into nftables";
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
-    wantedBy = [ "multi-user.target" ];
+    actionban = APIKEY=$(${pkgs.coreutils}/bin/cat /run/secrets/abuseipdb-apikey) && \
+                lgm=$(${pkgs.coreutils}/bin/printf '%%.1000s\n...' "<matches>") && \
+                ${pkgs.curl}/bin/curl --fail --tlsv1.2 -sSo /dev/null \
+                  'https://api.abuseipdb.com/api/v2/report' \
+                  -H 'Accept: application/json' \
+                  -H "Key: $APIKEY" \
+                  --data-urlencode "comment=$lgm" \
+                  --data-urlencode 'ip=<ip>' \
+                  --data 'categories=<abuseipdb_category>'
 
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = updateScript;
-      PrivateTmp = true;
-      ProtectHome = true;
-    };
+    actionstart =
+    actionstop =
+    actioncheck =
+    actionunban =
 
-    unitConfig.OnFailure = [ "notify-failure@%n.service" ];
-  };
+    [Init]
+    abuseipdb_category = 18
+  '';
 
-  # ── Daily timer ────────────────────────────────────────────────────
-  systemd.timers.abuseipdb-blocklist = {
-    description = "Daily AbuseIPDB blocklist update";
-    wantedBy = [ "timers.target" ];
-    timerConfig = {
-      OnCalendar = "04:30";
-      RandomizedDelaySec = "30min";
-      Persistent = true;
-    };
+  # Add AbuseIPDB reporting to sshd jail
+  # Categories: 18 = Brute-Force, 22 = SSH
+  services.fail2ban.jails.sshd.settings = {
+    action = ''
+      %(action_)s
+                     abuseipdb[abuseipdb_category="18,22"]'';
   };
 }
 
