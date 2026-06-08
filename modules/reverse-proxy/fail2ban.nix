@@ -27,7 +27,7 @@
       # Categories: 14 = Port Scan, 19 = Bad Web Bot
       action = ''
         %(action_)s
-                         abuseipdb[abuseipdb_apikey="$(cat /run/secrets/abuseipdb-apikey)", abuseipdb_category="14,19"]'';
+                       abuseipdb-nixos[abuseipdb_category="14,19"]'';
     };
 
     ## Ban bots probing common exploit paths on real vhosts
@@ -41,7 +41,7 @@
       # Categories: 21 = Web App Attack, 19 = Bad Web Bot
       action = ''
         %(action_)s
-                         abuseipdb[abuseipdb_apikey="$(cat /run/secrets/abuseipdb-apikey)", abuseipdb_category="21,19"]'';
+                       abuseipdb-nixos[abuseipdb_category="21,19"]'';
     };
 
     ## Ban clients sending malformed/garbage requests to real vhosts
@@ -55,7 +55,7 @@
       # Categories: 19 = Bad Web Bot, 15 = Hacking
       action = ''
         %(action_)s
-                        abuseipdb[abuseipdb_apikey="$(cat /run/secrets/abuseipdb-apikey)", abuseipdb_category="19,15"]'';
+                       abuseipdb-nixos[abuseipdb_category="19,15"]'';
     };
 
     ## Ban clients that repeatedly hit rate limits on real vhosts
@@ -70,7 +70,7 @@
       # Categories: 19 = Bad Web Bot
       action = ''
         %(action_)s
-                        abuseipdb[abuseipdb_apikey="$(cat /run/secrets/abuseipdb-apikey)", abuseipdb_category="19"]'';
+                       abuseipdb-nixos[abuseipdb_category="19"]'';
     };
   };
 }

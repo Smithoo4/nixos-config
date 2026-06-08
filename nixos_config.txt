@@ -751,7 +751,7 @@ in
       # Categories: 14 = Port Scan, 19 = Bad Web Bot
       action = ''
         %(action_)s
-                         abuseipdb[abuseipdb_apikey="$(cat /run/secrets/abuseipdb-apikey)", abuseipdb_category="14,19"]'';
+                       abuseipdb-nixos[abuseipdb_category="14,19"]'';
     };
 
     ## Ban bots probing common exploit paths on real vhosts
@@ -765,7 +765,7 @@ in
       # Categories: 21 = Web App Attack, 19 = Bad Web Bot
       action = ''
         %(action_)s
-                         abuseipdb[abuseipdb_apikey="$(cat /run/secrets/abuseipdb-apikey)", abuseipdb_category="21,19"]'';
+                       abuseipdb-nixos[abuseipdb_category="21,19"]'';
     };
 
     ## Ban clients sending malformed/garbage requests to real vhosts
@@ -779,7 +779,7 @@ in
       # Categories: 19 = Bad Web Bot, 15 = Hacking
       action = ''
         %(action_)s
-                        abuseipdb[abuseipdb_apikey="$(cat /run/secrets/abuseipdb-apikey)", abuseipdb_category="19,15"]'';
+                       abuseipdb-nixos[abuseipdb_category="19,15"]'';
     };
 
     ## Ban clients that repeatedly hit rate limits on real vhosts
@@ -794,7 +794,7 @@ in
       # Categories: 19 = Bad Web Bot
       action = ''
         %(action_)s
-                        abuseipdb[abuseipdb_apikey="$(cat /run/secrets/abuseipdb-apikey)", abuseipdb_category="19"]'';
+                       abuseipdb-nixos[abuseipdb_category="19"]'';
     };
   };
 }
@@ -805,9 +805,9 @@ in
 {
   sops.secrets.abuseipdb-apikey = { };
 
-  # Override stock abuseipdb.conf — adds full Nix store paths
-  # and reads API key from sops secret at runtime.
-  environment.etc."fail2ban/action.d/abuseipdb.conf".text = ''
+  # Custom action file — named differently to avoid conflict with
+  # the stock abuseipdb.conf shipped by the fail2ban package.
+  environment.etc."fail2ban/action.d/abuseipdb-nixos.conf".text = ''
     [Definition]
     norestored = 1
 
@@ -834,7 +834,7 @@ in
   services.fail2ban.jails.sshd.settings = {
     action = ''
       %(action_)s
-                     abuseipdb[abuseipdb_category="18,22"]'';
+                     abuseipdb-nixos[abuseipdb_category="18,22"]'';
   };
 }
 

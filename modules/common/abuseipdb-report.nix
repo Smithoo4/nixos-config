@@ -3,9 +3,9 @@
 {
   sops.secrets.abuseipdb-apikey = { };
 
-  # Override stock abuseipdb.conf — adds full Nix store paths
-  # and reads API key from sops secret at runtime.
-  environment.etc."fail2ban/action.d/abuseipdb.conf".text = ''
+  # Custom action file — named differently to avoid conflict with
+  # the stock abuseipdb.conf shipped by the fail2ban package.
+  environment.etc."fail2ban/action.d/abuseipdb-nixos.conf".text = ''
     [Definition]
     norestored = 1
 
@@ -32,6 +32,6 @@
   services.fail2ban.jails.sshd.settings = {
     action = ''
       %(action_)s
-                     abuseipdb[abuseipdb_category="18,22"]'';
+                     abuseipdb-nixos[abuseipdb_category="18,22"]'';
   };
 }
