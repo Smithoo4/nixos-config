@@ -3,8 +3,6 @@
 {
   sops.secrets.abuseipdb-apikey = { };
 
-  # Custom action file — named differently to avoid conflict with
-  # the stock abuseipdb.conf shipped by the fail2ban package.
   environment.etc."fail2ban/action.d/abuseipdb-nixos.conf".text = ''
     [Definition]
     norestored = 1
