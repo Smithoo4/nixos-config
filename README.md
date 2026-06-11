@@ -97,7 +97,7 @@ There were no significant differences observed between Nginx mainline and Angie 
     - [ ] Integrate [AbuseIPDB](https://www.abuseipdb.com/)
         - [X] Preemptive blocking using [borestad/blocklist-abuseipdb](https://github.com/borestad/blocklist-abuseipdb) — daily sync to nftables prerouting set
         - [X] Measure reduction in fail2ban bans after enabling preemptive blocking
-        - [ ] Report banned IPs via native fail2ban action (`abuseipdb.conf`) with per-jail category mapping
+        - [X] Report banned IPs via native fail2ban action (`abuseipdb.conf`) with per-jail category mapping
 
 ### Decision: Adopt Fail2Ban as Primary Control; CrowdSec Deferred
 
@@ -118,6 +118,8 @@ As a result, **Fail2Ban with AbuseIPDB has been selected as the primary security
 - Simple, transparent, and fully declarative
 - Tight integration with Nginx logs and systemd journald
 - Sufficient for current threat model (bots, scanners, opportunistic abuse)
+
+Both tools support IPv6 detection and banning, but neither handles it perfectly today. Fail2Ban bans individual /128 addresses only, with no native support for subnet-level blocking — a significant limitation given that IPv6 attackers can trivially rotate within a /64. An upstream proposal for prefix aggregation (GitHub issue #1123) has been open since 2015 and remains unresolved. AbuseIPDB's API v2 fully supports IPv6 reporting and lookups, so that side of the integration is ready. CrowdSec is better positioned here: its decision model natively understands CIDR ranges, its community blocklist includes IPv6 threat data, and IPv6 works out of the box with no extra configuration. That said, CrowdSec's nftables bouncer has a known bug where CIDR range decisions are silently reduced to a single address, so subnet-level enforcement should be verified. Neither tool currently offers automatic prefix aggregation (e.g., detecting distributed abuse across a /64 and banning the range). If IPv6 exposure increases in the future, this is another factor favouring an eventual move to CrowdSec.
 
 CrowdSec development and NixOS integration progress will continue to be monitored.  
 Thanks to everyone contributing to upstream development and NixOS support — this is an area with strong potential, and future re-evaluation is planned once the ecosystem matures.
