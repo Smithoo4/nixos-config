@@ -30,12 +30,12 @@ jobs:
             dependencies
             automated
 
-      - name: Enable auto-merge for the PR
+      - name: Merge the PR
         if: steps.update.outputs.pull-request-number != ''
         run: |
           gh pr merge ${{ steps.update.outputs.pull-request-number }} \
-            --auto \
             --squash \
+            --delete-branch \
             --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN_FOR_UPDATES }}
