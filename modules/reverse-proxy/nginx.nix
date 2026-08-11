@@ -19,7 +19,7 @@ in
   ## Nginx
   services.nginx = {
     enable = true;
-    package = pkgs.angie;
+    #package = pkgs.angie;
     enableReload = true;
 
     recommendedTlsSettings = true;
