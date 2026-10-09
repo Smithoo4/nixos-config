@@ -2364,8 +2364,6 @@ automatically.
 
 **Version:** 2.4 | **Last Updated:** April 2026
 
-===== nixos_config.txt =====
-
 ===== README.md =====
 # NixOS Home Server Configuration
 
