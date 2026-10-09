@@ -15,7 +15,6 @@
 
     # Services
     "${self}/modules/reverse-proxy"
-    "${self}/modules/ISP-monitor"
 
   ];
 
