@@ -73,8 +73,6 @@ In contrast, Nginx offers:
 - Mature and well-documented Fail2Ban integration
 - Strong NixOS module support and reproducibility
 
-Caddy has been **retained in the repository for reference only** but is no longer being actively developed or deployed.
-
 There were no significant differences observed between Nginx mainline and Angie during testing. Angie will continue to be used, with potential future exploration of its built-in metrics and statistics capabilities (e.g. status endpoints and monitoring integration), which may support observability improvements.
 
 ## Phase 3: Security
@@ -194,9 +192,6 @@ Thanks to everyone contributing to upstream development and NixOS support — th
 - [ ] Uptime & external monitoring
     - [Uptime Kuma](https://github.com/louislam/uptime-kuma) — self-hosted uptime monitoring
     - External uptime checks (optional)
-- [ ] Network & internet monitoring
-    - Existing: Speedtest CLI + InfluxDB + Grafana
-    - Extend with latency tracking (ping), packet loss, and outage detection
 - [ ] Alerting & notifications
     - Grafana alerting
     - Prometheus Alertmanager
