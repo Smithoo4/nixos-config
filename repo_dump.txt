@@ -2576,8 +2576,6 @@ Thanks to everyone contributing to upstream development and NixOS support — th
 * Explore alternatives to previously used tools and services.
 * Maintain a clean, modular, and scalable configuration.
 
-===== repo_dump.txt =====
-
 ===== secrets/secrets.yaml =====
 #ENC[AES256_GCM,data:t6857UeV1fg3V40wTV0=,iv:o3vVKKn9ZJYg+ls/sNGjyvsXWNkrQux1Azh5VBiSO7o=,tag:85E34bK7dytatnH/ChUekw==,type:comment]
 smithoo4-password: ENC[AES256_GCM,data:gHEJQJ++4RDRu7nzCUthtk8jT2/yd4Hk02didBur49ywxUr2891WewoFj6bUTHwolRGubX7zOKpxG8a/hMTDIJUy2LNCjqB9XYm0dfTZP1Gd86JGvoX6N0MSMx9m4ewG1JMpDR2InveeWg==,iv:JMsaRkqpF0g3/S0g2NVDV/laHUf56afaY9AQgTsalBw=,tag:GdsmG3kRi/ltwZ2RkLNviQ==,type:str]
