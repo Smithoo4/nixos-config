@@ -49,7 +49,7 @@ reachable over SSH from the source machine and must be running one of:
 
 | Placeholder | Meaning |
 |---|---|
-| `<hostname>` | The hostname for the new machine (e.g. `twoohm`, `myserver`) |
+| `<hostname>` | The hostname for the new machine (e.g. `oneohm`, `myserver`) |
 | `<TARGET-IP>` | The IP address of the target machine |
 | `<PUBKEY>` | The age public key generated for the new host |
 | `<DISK>` | The target disk device path (e.g. `/dev/vda`, `/dev/sda`) |
@@ -259,7 +259,7 @@ nixosConfigurations = {
     timezone = "America/Edmonton";
   };
 
-  fourohm = mkHost {
+  fiveohm = mkHost {
     system = "x86_64-linux";
     hostname = "fourohm";
     timezone = "America/Edmonton";
@@ -716,4 +716,4 @@ automatically.
 
 ---
 
-**Version:** 2.4 | **Last Updated:** April 2026
+**Version:** 2.5 | **Last Updated:** November 2026

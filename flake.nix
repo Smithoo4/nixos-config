@@ -58,18 +58,6 @@
           timezone = "America/Edmonton";
         };
 
-        twoohm = mkHost {
-          system = "aarch64-linux";
-          hostname = "twoohm";
-          timezone = "America/Edmonton";
-        };
-
-        fourohm = mkHost {
-          system = "x86_64-linux";
-          hostname = "fourohm";
-          timezone = "America/Edmonton";
-        };
-
         fiveohm = mkHost {
           system = "aarch64-linux";
           hostname = "fiveohm";

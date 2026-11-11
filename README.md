@@ -13,9 +13,9 @@ Active Development — currently being refined, expanded, and tested.
 | Host | Status | Hardware | Purpose |
 | :--- | :--- | :--- | :--- |
 | **oneohm** | Active Development | Remote VM (IncusOS) | Testing and development |
-| **twoohm** | Planned | Raspberry Pi 4 | TBD|
+| **twoohm** | Planned| TBD | TBD|
 | **threeohm** | Planned | TBD | TBD |
-| **fourohm** | Active Development | Local VM (virt manager) | Testing and development |
+| **fourohm** | Planned| TBD | TBD |
 | **fiveohm** | Active Development | OCI Ampere ARM VPS | Testing and development |
 
 ---
@@ -133,7 +133,6 @@ Thanks to everyone contributing to upstream development and NixOS support — th
 ### Phase 5: Ideas & Modular Exploration (Optional)
  - [ ] Evaluate Dynamic DNS using another provider
         - [DYNU](https://www.dynu.com/en-US): I've used it before, and it has lots of nice features plus a wider selection of domain names.
-- [ ] Evaluate [flake-parts](https://github.com/hercules-ci/flake-parts)
 - [ ] Refactor configuration layout based on lessons learned
 - [ ] Static ip address on local network
     - [ ] IPv4
