@@ -260,9 +260,9 @@ nixosConfigurations = {
   };
 
   fiveohm = mkHost {
-    system = "x86_64-linux";
+    system = "aarch64-linux";
     hostname = "fourohm";
-    timezone = "America/Edmonton";
+    timezone = "America/Toronto";
   };
 
   <hostname> = mkHost {
