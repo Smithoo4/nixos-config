@@ -8,7 +8,7 @@
       "--no-write-lock-file"
       "-L"
     ];
-    dates = "Sun *-*-* 01:00:00";
+    dates = "*-*-* 10:00:00 UTC";
     randomizedDelaySec = "5min";
     allowReboot = true;
   };

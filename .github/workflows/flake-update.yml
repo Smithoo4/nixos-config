@@ -3,7 +3,7 @@ name: "Flake.lock: weekly update"
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 8 * * 6'  # Saturday 1AM MST (UTC-7)
+    - cron: '0 8 * * 0'  # Saturday 1AM MST (UTC-7)
 
 jobs:
   flake-update:
@@ -35,6 +35,7 @@ jobs:
         run: |
           gh pr merge ${{ steps.update.outputs.pull-request-number }} \
             --squash \
+            --auto \
             --delete-branch \
             --repo ${{ github.repository }}
         env:
