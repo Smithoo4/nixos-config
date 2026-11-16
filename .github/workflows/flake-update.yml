@@ -1,4 +1,4 @@
-name: "Flake.lock: weekly update"
+name: "Flake.lock: daily update"
 
 on:
   workflow_dispatch:
