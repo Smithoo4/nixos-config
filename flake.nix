@@ -64,10 +64,13 @@
           timezone = "America/Toronto";
         };
       };
-      checks = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (system:
-        nixpkgs.lib.mapAttrs (_: cfg: cfg.config.system.build.toplevel)
-          (nixpkgs.lib.filterAttrs
-            (_: cfg: cfg.pkgs.stdenv.hostPlatform.system == system)
-            self.nixosConfigurations));
+      checks = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (
+        system:
+        nixpkgs.lib.mapAttrs (_: cfg: cfg.config.system.build.toplevel) (
+          nixpkgs.lib.filterAttrs (
+            _: cfg: cfg.pkgs.stdenv.hostPlatform.system == system
+          ) self.nixosConfigurations
+        )
+      );
     };
 }
