@@ -741,6 +741,7 @@ in
       "192.168.0.0/24"
     ];
   };
+  systemd.services.fail2ban.unitConfig.OnFailure = [ "notify-failure@%n.service" ];
 }
 
 # Check fail2ban is running and SSH jail is active
@@ -861,7 +862,7 @@ in
 }
 
 ===== modules/reverse-proxy/acme.nix =====
-{ config, ... }:
+{ config, lib, ... }:
 
 {
   # Sops secrets
@@ -884,6 +885,14 @@ in
       environmentFile = config.sops.templates."acme-duckdns-env".path;
     };
   };
+
+  # Email root if any certificate renewal fails
+  systemd.services = lib.mapAttrs' (
+    cert: _:
+    lib.nameValuePair "acme-order-renew-${cert}" {
+      unitConfig.OnFailure = [ "notify-failure@%n.service" ];
+    }
+  ) config.security.acme.certs;
 }
 
 ===== modules/reverse-proxy/default.nix =====
@@ -1444,6 +1453,8 @@ in
       limit_req_zone $binary_remote_addr zone=general:10m rate=10r/s;
     '';
   };
+
+    systemd.services.nginx.unitConfig.OnFailure = [ "notify-failure@%n.service" ];
 
   ## Catch-all: drop ALL unmatched traffic (HTTP + HTTPS) → 444
   services.nginx.virtualHosts."_" = {

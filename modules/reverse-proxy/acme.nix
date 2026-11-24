@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, lib, ... }:
 
 {
   # Sops secrets
@@ -21,4 +21,12 @@
       environmentFile = config.sops.templates."acme-duckdns-env".path;
     };
   };
+
+  # Email root if any certificate renewal fails
+  systemd.services = lib.mapAttrs' (
+    cert: _:
+    lib.nameValuePair "acme-order-renew-${cert}" {
+      unitConfig.OnFailure = [ "notify-failure@%n.service" ];
+    }
+  ) config.security.acme.certs;
 }

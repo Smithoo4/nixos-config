@@ -17,6 +17,7 @@
       "192.168.0.0/24"
     ];
   };
+  systemd.services.fail2ban.unitConfig.OnFailure = [ "notify-failure@%n.service" ];
 }
 
 # Check fail2ban is running and SSH jail is active

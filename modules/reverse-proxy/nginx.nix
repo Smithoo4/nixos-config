@@ -35,6 +35,8 @@ in
     '';
   };
 
+    systemd.services.nginx.unitConfig.OnFailure = [ "notify-failure@%n.service" ];
+
   ## Catch-all: drop ALL unmatched traffic (HTTP + HTTPS) → 444
   services.nginx.virtualHosts."_" = {
     default = true;
