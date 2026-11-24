@@ -46,6 +46,15 @@
   # Nix Download Buffer
   nix.settings.download-buffer-size = 268435456; # 256 MB
 
+  # Only wheel members can use the Nix daemon
+  nix.settings.allowed-users = [ "@wheel" ];
+
+  # Flake-only system: remove channels
+  nix.channel.enable = false;
+
+  # Only wheel members can run sudo
+  security.sudo.execWheelOnly = true;
+
   # Firewall
   networking.firewall.enable = true;
   networking.nftables.enable = true;
