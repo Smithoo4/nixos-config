@@ -95,7 +95,7 @@ in
     description = "Restore cached AbuseIPDB blocklist after nftables (re)load";
     after = [ "nftables.service" ];
     partOf = [ "nftables.service" ];          # follow restarts
-    wantedBy = [ "nftables.service" ];
+    wantedBy = [ "nftables.service" "multi-user.target" ];
     unitConfig.ReloadPropagatedFrom = "nftables.service"; # follow reloads
     serviceConfig = {
       Type = "oneshot";
